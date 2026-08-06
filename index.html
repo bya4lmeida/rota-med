@@ -396,6 +396,48 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
 
 [data-theme="dark"] .card{background:rgba(34,28,62,.84);}
 [data-theme="light"] .card{background:rgba(255,255,255,.88);}
+/* =====================================================================
+   v2.2 — superfícies opacas de verdade + fundo mais quieto
+   ===================================================================== */
+/* gradiente de fundo bem mais discreto (parava de "vazar" nas superfícies) */
+[data-theme="dark"] body::before{opacity:.22;}
+[data-theme="dark"] body::after{opacity:.9;}
+[data-theme="light"] body::before{opacity:.34;}
+[data-theme="light"] body::after{opacity:.82;}
+
+/* cards de vidro agora quase sólidos */
+[data-theme="dark"] .card{background:rgba(31,26,56,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+[data-theme="light"] .card{background:rgba(255,255,255,.96);}
+
+/* tiles totalmente opacos e destacados */
+[data-theme="dark"] .tile{background:#241E46;border-color:rgba(160,140,255,.24);box-shadow:0 4px 16px rgba(0,0,0,.36);}
+[data-theme="light"] .tile{background:#fff;border-color:rgba(120,110,160,.20);box-shadow:0 4px 14px rgba(80,60,160,.08);}
+
+/* sidebar sólida */
+[data-theme="dark"] .sidebar{background:#181330;}
+[data-theme="light"] .sidebar{background:#fbfaff;}
+
+/* -- ESTUDO: pomodoro + questões -- */
+.pomo{display:flex;flex-direction:column;align-items:center;gap:16px;}
+.pomo-ring{position:relative;width:160px;height:160px;}
+.pomo-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.pomo-time{font-size:34px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;}
+.pomo-state{font-size:11px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.08em;margin-top:2px;}
+.pomo-presets{display:flex;gap:8px;}
+.pomo-preset{font-size:13px;font-weight:700;border:1px solid var(--line);background:var(--panel-solid);color:var(--ink-soft);border-radius:100px;padding:7px 16px;cursor:pointer;}
+.pomo-preset.active{background:linear-gradient(120deg,var(--grad-a),var(--grad-c));color:#fff;border-color:transparent;}
+.pomo-actions{display:flex;gap:10px;align-items:center;}
+.qform{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:14px;}
+.qform .field{margin-bottom:0;}
+.qform input,.qform select{width:100%;font-size:14px;border:1px solid var(--line);border-radius:12px;padding:11px 14px;background:var(--panel-solid);color:var(--ink);}
+.qhist{margin-top:14px;display:flex;flex-direction:column;gap:7px;}
+.qrow{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel-solid);border:1px solid var(--line);border-radius:12px;padding:9px 13px;font-size:12.5px;}
+.qrow .qr-date{color:var(--ink-faint);font-weight:600;font-size:11px;}
+.qrow .qr-acc{font-weight:800;}
+.stud-summary{display:flex;gap:16px;flex-wrap:wrap;align-items:center;}
+.stud-summary .ss-item{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;}
+.stud-summary .ss-item b{font-size:16px;font-weight:800;letter-spacing:-.02em;}
+.stud-summary .ss-ic{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;font-size:15px;}
 </style>
 </head>
 <body data-theme="light">
@@ -448,7 +490,7 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
         <button class="avatar-btn lg" id="avatarBtn" title="Perfil">B</button>
         <div class="su-meta"><div class="su-name" id="sbName">—</div><div class="su-mail" id="sbMail">—</div></div>
       </div>
-      <div style="font-size:9.5px;color:var(--ink-faint);font-weight:700;letter-spacing:.06em;text-align:center;opacity:.8;">layout v2 · sidebar</div>
+      <div style="font-size:9.5px;color:var(--ink-faint);font-weight:700;letter-spacing:.06em;text-align:center;opacity:.8;">layout v2.2 · estudo</div>
     </div>
   </aside>
   <div class="main">
@@ -482,6 +524,7 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
         <div class="tile"><div class="ic ic-green">✅</div><div class="k">Progresso geral</div><div class="v" id="tProg">0%</div><div class="s" id="tProgCount">0/0</div></div>
         <div class="tile"><div class="ic ic-pink">📊</div><div class="k">Média</div><div class="v" id="tAvg">–</div><div class="s" id="tAvgGoal">meta —</div></div>
       </div>
+      <div class="card" id="studSummaryCard"><div class="card-h"><span class="eyebrow">Estudo</span><h2>Hoje em números</h2></div><div class="stud-summary" id="studSummary"></div></div>
       <div class="grid g-2">
         <div class="card"><div class="card-h"><span class="eyebrow">Trilhas</span><h2>Progresso por área</h2></div><div id="dashBars"></div></div>
         <div class="card"><div class="card-h"><span class="eyebrow">Agora</span><h2>Tarefas do dia</h2></div><div id="dashNext"></div></div>
@@ -514,6 +557,54 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
   <section class="panel" data-panel="sprints">
     <div class="card"><div class="card-h"><span class="eyebrow">Sua trilha</span><h2>Jornada até a prova</h2></div><div class="journey" id="journey"></div></div>
     <div id="sprintsList"></div>
+  </section>
+
+  <section class="panel" data-panel="estudo">
+    <div class="grid g-2">
+      <div class="card">
+        <div class="card-h"><span class="eyebrow">Foco</span><h2>Pomodoro</h2></div>
+        <div class="pomo">
+          <div class="pomo-ring">
+            <svg width="160" height="160" viewBox="0 0 160 160"><circle cx="80" cy="80" r="70" fill="none" stroke="var(--line)" stroke-width="10"/><circle id="pomoRing" cx="80" cy="80" r="70" fill="none" stroke="url(#gr)" stroke-width="10" stroke-linecap="round" stroke-dasharray="440" stroke-dashoffset="0" transform="rotate(-90 80 80)"/></svg>
+            <div class="pomo-center"><div class="pomo-time" id="pomoTime">25:00</div><div class="pomo-state" id="pomoState">Pronto</div></div>
+          </div>
+          <div class="pomo-presets" id="pomoPresets">
+            <button class="pomo-preset active" data-min="25">25</button>
+            <button class="pomo-preset" data-min="50">50</button>
+            <button class="pomo-preset" data-min="15">15</button>
+          </div>
+          <div class="pomo-actions">
+            <button class="btn-primary" id="pomoStart" style="max-width:150px;">Iniciar</button>
+            <button class="btn-line" id="pomoReset">Zerar</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="eyebrow">Constância</span><h2>Horas estudadas</h2></div>
+        <div class="grid g-2" style="gap:12px;">
+          <div class="tile"><div class="ic ic-violet">⏱️</div><div class="k">Hoje</div><div class="v" id="stHoje">0h 0m</div><div class="s" id="stHojeSess">0 sessões</div></div>
+          <div class="tile"><div class="ic ic-orange">📆</div><div class="k">Esta semana</div><div class="v" id="stSemana">0h</div><div class="s" id="stSemanaSess">0 sessões</div></div>
+        </div>
+        <div class="field" style="margin-top:14px;"><label>Adicionar minutos manualmente</label>
+          <div style="display:flex;gap:8px;"><input type="number" id="stManual" min="1" placeholder="ex: 40" style="flex:1;font-size:14px;border:1px solid var(--line);border-radius:12px;padding:11px 14px;background:var(--panel-solid);color:var(--ink);"><button class="mini-add" id="stManualAdd" style="padding:0 16px;">+ Add</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="eyebrow">Desempenho</span><h2>Questões resolvidas</h2></div>
+      <div class="grid g-3" style="gap:12px;">
+        <div class="tile"><div class="ic ic-green">🎯</div><div class="k">Total resolvidas</div><div class="v" id="qTotal">0</div><div class="s" id="qSess">0 registros</div></div>
+        <div class="tile"><div class="ic ic-violet">✅</div><div class="k">Acertos</div><div class="v" id="qCorrect">0</div><div class="s">acumulado</div></div>
+        <div class="tile"><div class="ic ic-orange">📊</div><div class="k">Taxa de acerto</div><div class="v" id="qAcc">–</div><div class="s" id="qAccBar">meta 70%+</div></div>
+      </div>
+      <div class="qform">
+        <div class="field" style="flex:1;min-width:120px;"><label>Resolvidas</label><input type="number" id="qIn" min="1" placeholder="ex: 30"></div>
+        <div class="field" style="flex:1;min-width:120px;"><label>Acertos</label><input type="number" id="qCorrIn" min="0" placeholder="ex: 22"></div>
+        <select id="qArea" style="align-self:flex-end;"></select>
+        <button class="mini-add" id="qAdd" style="align-self:flex-end;padding:11px 18px;">Registrar</button>
+      </div>
+      <div id="qHist" class="qhist"></div>
+    </div>
   </section>
 
   <section class="panel" data-panel="perfil">
@@ -870,7 +961,7 @@ function fmtBR(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return `${d}/${
 function examDate(){return PLAN&&PLAN.examDate?new Date(PLAN.examDate+'T08:00:00'):null;}
 
 /* ============================ TABS ============================ */
-const BASE_TABS=[['dashboard','Início','🏠'],['metas','Metas','🎯'],['progresso','Progresso','📈'],['semanal','Semana','🗓️'],['kanban','Kanban','🗂️'],['sprints','Sprints','⚡'],['perfil','Perfil','👤']];
+const BASE_TABS=[['dashboard','Início','🏠'],['metas','Metas','🎯'],['progresso','Progresso','📈'],['semanal','Semana','🗓️'],['kanban','Kanban','🗂️'],['sprints','Sprints','⚡'],['estudo','Estudo','⏱️'],['perfil','Perfil','👤']];
 function tabsFor(){const t=BASE_TABS.slice();if(ME&&ME.role==='admin')t.push(['admin','Admin','🛠️']);return t;}
 function renderTabs(){
   const tabs=tabsFor();
@@ -934,6 +1025,7 @@ function renderDashboard(){
   const el=document.getElementById('dashNext');
   el.innerHTML=list.length?list.map(id=>taskRow(id,taskIndex[id])).join(''):'<div class="empty">Tudo em dia ✨</div>';
   bindTasks(el);
+  renderStudSummary();
 }
 
 function renderMetas(){
@@ -1105,6 +1197,100 @@ function renderSprints(){
   bindTasks(el);
 }
 
+/* ============================ BLOCO B · EXTRAS (persistência zero-SQL) ============================ */
+/* Guardado dentro de scores.__extras — namespace isolado, não conflita com as notas por área. */
+let EXTRAS={};
+function loadExtras(){
+  EXTRAS=(scoreLog && typeof scoreLog.__extras==='object' && scoreLog.__extras)?scoreLog.__extras:{};
+  EXTRAS.study=EXTRAS.study||{};        // { "2026-08-06": {min, sess} }
+  EXTRAS.questions=EXTRAS.questions||[]; // [{date,total,correct,area}]
+}
+function saveExtras(){ scoreLog.__extras=EXTRAS; store.set('scores',scoreLog); }
+
+function logStudyMinutes(min){
+  min=Math.round(min); if(!min||min<=0)return;
+  const t=todayISO(); const d=EXTRAS.study[t]||{min:0,sess:0};
+  d.min+=min; d.sess+=1; EXTRAS.study[t]=d; saveExtras();
+}
+function studyToday(){return EXTRAS.study[todayISO()]||{min:0,sess:0};}
+function studyWeek(){
+  const now=new Date(),dow=(now.getDay()+6)%7,mon=new Date(now);mon.setDate(now.getDate()-dow);mon.setHours(0,0,0,0);
+  let min=0,sess=0;
+  Object.entries(EXTRAS.study).forEach(([iso,v])=>{const d=new Date(iso+'T12:00:00');if(d>=mon){min+=v.min||0;sess+=v.sess||0;}});
+  return {min,sess};
+}
+function fmtHM(min){const h=Math.floor(min/60),m=Math.round(min%60);return h?`${h}h ${m}m`:`${m}m`;}
+function fmtH(min){const v=(min/60);return (Number.isInteger(v)?v:v.toFixed(1))+'h';}
+function qTotals(){let total=0,correct=0;EXTRAS.questions.forEach(q=>{total+=q.total||0;correct+=q.correct||0;});return {total,correct,acc:total?Math.round(correct/total*100):null};}
+
+/* ---- POMODORO ---- */
+let pomoMin=25, pomoLeft=25*60, pomoTimer=null, pomoRunning=false;
+function pomoFmt(s){const m=Math.floor(s/60),sec=s%60;return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;}
+function pomoRingSet(){const c=2*Math.PI*70;const elapsed=1-(pomoLeft/(pomoMin*60));const r=document.getElementById('pomoRing');if(r)r.style.strokeDashoffset=String(c*elapsed);}
+function pomoRender(){const t=document.getElementById('pomoTime');if(t)t.textContent=pomoFmt(pomoLeft);pomoRingSet();}
+function pomoSet(min){pomoMin=min;pomoLeft=min*60;pomoRunning=false;clearInterval(pomoTimer);const s=document.getElementById('pomoState');if(s)s.textContent='Pronto';const b=document.getElementById('pomoStart');if(b)b.textContent='Iniciar';pomoRender();}
+function pomoTick(){
+  pomoLeft--;
+  if(pomoLeft<=0){
+    clearInterval(pomoTimer);pomoRunning=false;pomoLeft=0;pomoRender();
+    logStudyMinutes(pomoMin);
+    document.getElementById('pomoState').textContent='Concluído';
+    document.getElementById('pomoStart').textContent='Iniciar';
+    toast('Sessão concluída! +'+pomoMin+' min de foco 🎯');
+    renderEstudo();renderStudSummary();
+    setTimeout(()=>pomoSet(pomoMin),1400);
+    return;
+  }
+  pomoRender();
+}
+function pomoToggle(){
+  if(pomoRunning){clearInterval(pomoTimer);pomoRunning=false;document.getElementById('pomoStart').textContent='Continuar';document.getElementById('pomoState').textContent='Pausado';}
+  else{pomoRunning=true;document.getElementById('pomoStart').textContent='Pausar';document.getElementById('pomoState').textContent='Focando';pomoTimer=setInterval(pomoTick,1000);}
+}
+
+function renderStudSummary(){
+  const el=document.getElementById('studSummary'); if(!el)return;
+  const st=studyToday(), q=qTotals();
+  el.innerHTML=`
+    <div class="ss-item"><span class="ss-ic ic-violet">⏱️</span><span><b>${fmtHM(st.min)}</b><br><span style="font-size:11px;color:var(--ink-faint)">estudadas hoje</span></span></div>
+    <div class="ss-item"><span class="ss-ic ic-green">🎯</span><span><b>${q.total}</b><br><span style="font-size:11px;color:var(--ink-faint)">questões no total</span></span></div>
+    <div class="ss-item"><span class="ss-ic ic-orange">📊</span><span><b>${q.acc!==null?q.acc+'%':'–'}</b><br><span style="font-size:11px;color:var(--ink-faint)">de acerto</span></span></div>`;
+}
+
+function renderEstudo(){
+  pomoRender();
+  const st=studyToday(); const sh=document.getElementById('stHoje'); if(sh){sh.textContent=fmtHM(st.min);document.getElementById('stHojeSess').textContent=st.sess+' sessões';}
+  const sw=studyWeek(); const ss=document.getElementById('stSemana'); if(ss){ss.textContent=fmtH(sw.min);document.getElementById('stSemanaSess').textContent=sw.sess+' sessões';}
+  const q=qTotals(); const qt=document.getElementById('qTotal');
+  if(qt){qt.textContent=q.total;document.getElementById('qCorrect').textContent=q.correct;document.getElementById('qAcc').textContent=q.acc!==null?q.acc+'%':'–';document.getElementById('qSess').textContent=EXTRAS.questions.length+' registros';}
+  const qa=document.getElementById('qArea'); if(qa && !qa.dataset.f){qa.innerHTML=Object.keys(AREA_LABELS).map(a=>`<option value="${a}">${AREA_LABELS[a]}</option>`).join('');qa.value='natureza';qa.dataset.f='1';}
+  const hist=document.getElementById('qHist');
+  if(hist)hist.innerHTML=EXTRAS.questions.slice(-6).reverse().map(x=>{const acc=x.total?Math.round(x.correct/x.total*100):0;const col=acc>=70?'var(--green)':acc>=50?'var(--amber)':'var(--red)';return `<div class="qrow"><span><span class="chip chip-${x.area||'outro'}">${AREA_LABELS[x.area]||'Geral'}</span> ${x.correct}/${x.total} <span class="qr-date">· ${fmtBR(x.date)}</span></span><span class="qr-acc" style="color:${col}">${acc}%</span></div>`;}).join('')||'<div class="empty" style="padding:8px 0;">Nenhum registro ainda. Some questões pra ver sua taxa de acerto evoluir.</div>';
+}
+
+/* bindings estáticos do painel Estudo (elementos fixos no HTML) */
+document.getElementById('pomoStart')?.addEventListener('click',pomoToggle);
+document.getElementById('pomoReset')?.addEventListener('click',()=>pomoSet(pomoMin));
+document.querySelectorAll('#pomoPresets .pomo-preset').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#pomoPresets .pomo-preset').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); pomoSet(parseInt(b.dataset.min));
+}));
+document.getElementById('stManualAdd')?.addEventListener('click',()=>{
+  const inp=document.getElementById('stManual');const m=parseInt(inp.value);
+  if(!m||m<=0){toast('Digite os minutos.');return;}
+  logStudyMinutes(m);inp.value='';renderEstudo();renderStudSummary();toast('+'+m+' min registrados.');
+});
+document.getElementById('qAdd')?.addEventListener('click',()=>{
+  const total=parseInt(document.getElementById('qIn').value);
+  const correct=parseInt(document.getElementById('qCorrIn').value);
+  const area=document.getElementById('qArea').value;
+  if(!total||total<=0){toast('Quantas questões você resolveu?');return;}
+  const corr=isNaN(correct)?0:Math.min(correct,total);
+  EXTRAS.questions.push({date:todayISO(),total,correct:corr,area});saveExtras();
+  document.getElementById('qIn').value='';document.getElementById('qCorrIn').value='';
+  renderEstudo();renderStudSummary();toast('Registro salvo! 🎯');
+});
+
 /* ---- PERFIL ---- */
 function renderPerfil(){
   document.getElementById('pfName').value=ME?.name||'';
@@ -1240,8 +1426,8 @@ document.getElementById('emptyImportBtn').addEventListener('click',()=>switchTab
 document.getElementById('copyReqBtn').addEventListener('click',()=>{navigator.clipboard?.writeText(REQ_REPORT).then(()=>toast('Roteiro copiado!'),()=>toast('Selecione e copie manualmente.'));});
 
 /* ============================ AUTH FLOW ============================ */
-function showAuth(){document.getElementById('authScreen').classList.remove('hidden');document.getElementById('app').classList.add('hidden');document.getElementById('botnav').classList.add('hidden');}
-function showApp(){document.getElementById('authScreen').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('botnav').classList.remove('hidden');}
+function showAuth(){document.getElementById('authScreen').classList.remove('hidden');document.getElementById('authBg').classList.remove('hidden');document.getElementById('app').classList.add('hidden');document.getElementById('botnav').classList.add('hidden');}
+function showApp(){document.getElementById('authScreen').classList.add('hidden');document.getElementById('authBg').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('botnav').classList.remove('hidden');}
 document.getElementById('toSignup').addEventListener('click',()=>{document.getElementById('loginView').classList.add('hidden');document.getElementById('signupView').classList.remove('hidden');});
 document.getElementById('toLogin').addEventListener('click',()=>{document.getElementById('signupView').classList.add('hidden');document.getElementById('loginView').classList.remove('hidden');});
 function authErr(el,m){const e=document.getElementById(el);e.textContent=m;e.classList.add('show');}
@@ -1288,6 +1474,7 @@ async function loadUserData(){
   completionLog=CLOUD_DATA.log||{};
   scoreLog=CLOUD_DATA.scores||{};
 
+  loadExtras();
   buildFromPlan();
 }
 
@@ -1300,6 +1487,7 @@ function renderAll(){
   renderKanban();
   renderJourney();
   renderSprints();
+  renderEstudo();
   renderPerfil();
   renderAdmin();
 }
@@ -1394,7 +1582,7 @@ Responda o máximo que puder. Com isto, geramos seu plano em JSON para importar 
    linguagens, simulado, rotina, outro.`;
 
 /* ============================ BOOT ============================ */
-console.log('%cRota Med · layout v2 (sidebar + calendário + jornada)','color:#7C5CFF;font-weight:700;font-size:13px');
+console.log('%cRota Med · layout v2.2 (opacidade + estudo)','color:#7C5CFF;font-weight:700;font-size:13px');
 (async function boot(){
   try{
     const cur=await authApi.current();
