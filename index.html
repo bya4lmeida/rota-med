@@ -1,47 +1,1185 @@
-create table if not exists public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  name text,
-  email text,
-  role text default 'student',
-  course text,
-  daily_xp int default 40,
-  created_at timestamptz default now()
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Rota Med · Planner ENEM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --grad-a:#7C5CFF;--grad-b:#9A6BFF;--grad-c:#FF8A4C;--grad-d:#FFB067;
+  --bg:#F4F3FB;--panel:rgba(255,255,255,.72);--panel-solid:#FFFFFF;--glass-border:rgba(255,255,255,.65);
+  --ink:#1A1830;--ink-soft:#6A6785;--ink-faint:#A4A1BC;
+  --violet:#7C5CFF;--violet-weak:#EFEBFF;--orange:#FF8A4C;--orange-weak:#FFEEE2;
+  --green:#22C08A;--green-weak:#E1F7EF;--pink:#F5589B;--blue:#4C8DFF;--amber:#F5A623;--red:#F0503C;--red-weak:#FCE6E2;
+  --line:rgba(120,110,160,.14);
+  --font:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  --shadow:0 8px 30px rgba(80,60,160,.10),0 2px 8px rgba(80,60,160,.06);
+  --shadow-lg:0 20px 60px rgba(80,60,160,.16);--r:22px;--r-sm:14px;
+}
+[data-theme="dark"]{
+  --bg:#0E0C1A;--panel:rgba(30,26,52,.62);--panel-solid:#1A1630;--glass-border:rgba(150,130,255,.14);
+  --ink:#F0EEFB;--ink-soft:#A6A2C8;--ink-faint:#6F6A92;
+  --violet:#9E86FF;--violet-weak:#241E44;--orange:#FF9D66;--orange-weak:#33210F;
+  --green:#3ED9A0;--green-weak:#123227;--red:#F5715F;--red-weak:#2E1613;
+  --line:rgba(160,140,255,.12);
+  --shadow:0 8px 34px rgba(0,0,0,.45);--shadow-lg:0 24px 70px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;}
+body{font-family:var(--font);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;position:relative;overflow-x:hidden;background:var(--bg);}
+body::before{content:"";position:fixed;inset:0;z-index:-2;background:radial-gradient(120% 90% at 8% 0%,var(--grad-a) 0%,transparent 46%),radial-gradient(110% 80% at 100% 12%,var(--grad-c) 0%,transparent 42%),radial-gradient(90% 70% at 60% 100%,var(--grad-b) 0%,transparent 50%);opacity:.9;}
+[data-theme="dark"] body::before{opacity:.42;}
+body::after{content:"";position:fixed;inset:0;z-index:-1;background:var(--bg);opacity:.62;}
+[data-theme="dark"] body::after{opacity:.78;}
+.wrap{max-width:1120px;margin:0 auto;padding:0 18px;}
+.hidden{display:none!important;}
+button{font-family:var(--font);}
+input,select,textarea{font-family:var(--font);}
+
+.auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.auth-card{width:100%;max-width:840px;background:var(--panel);border:1px solid var(--glass-border);border-radius:26px;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:var(--shadow-lg);overflow:hidden;display:grid;grid-template-columns:1fr 1fr;}
+@media(max-width:720px){.auth-card{grid-template-columns:1fr;}.auth-aside{display:none;}}
+.auth-form{padding:38px 34px;}
+.auth-logo{display:flex;align-items:center;gap:11px;margin-bottom:26px;}
+.logo-mark{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:20px;background:linear-gradient(135deg,var(--grad-a),var(--grad-c));box-shadow:0 6px 18px rgba(124,92,255,.4);}
+.auth-logo .t2{font-size:18px;font-weight:800;letter-spacing:-.02em;}
+.auth-logo .t1{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;}
+.auth-title{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:0 0 4px;}
+.auth-desc{font-size:13px;color:var(--ink-soft);margin:0 0 22px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11.5px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;}
+.field input{width:100%;font-size:14px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--panel-solid);color:var(--ink);}
+.field input:focus{outline:2px solid var(--violet);}
+.btn-primary{width:100%;border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(120deg,var(--grad-a),var(--grad-c));box-shadow:0 8px 22px rgba(124,92,255,.35);transition:transform .15s;}
+.btn-primary:hover{transform:translateY(-1px);}
+.btn-primary:active{transform:scale(.98);}
+.auth-switch{text-align:center;font-size:13px;color:var(--ink-soft);margin-top:18px;}
+.auth-switch a{color:var(--violet);font-weight:700;cursor:pointer;text-decoration:none;}
+.auth-err{background:var(--red-weak);color:var(--red);font-size:12.5px;font-weight:600;padding:10px 12px;border-radius:10px;margin-bottom:14px;display:none;}
+.auth-err.show{display:block;}
+.auth-aside{background:linear-gradient(150deg,var(--grad-a),var(--grad-b) 45%,var(--grad-c));color:#fff;padding:38px 34px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;}
+.auth-aside::after{content:"";position:absolute;right:-60px;bottom:-60px;width:240px;height:240px;border-radius:50%;background:rgba(255,255,255,.14);}
+.auth-aside h3{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.2;position:relative;z-index:1;}
+.auth-aside p{font-size:13.5px;opacity:.92;position:relative;z-index:1;}
+.aside-feats{list-style:none;padding:0;margin:20px 0 0;position:relative;z-index:1;}
+.aside-feats li{font-size:13px;margin-bottom:11px;display:flex;gap:9px;align-items:center;}
+.aside-feats li span{width:22px;height:22px;border-radius:7px;background:rgba(255,255,255,.22);display:grid;place-items:center;font-size:12px;}
+.sec-note{font-size:11px;color:var(--ink-faint);margin-top:16px;line-height:1.5;background:var(--panel-solid);border:1px solid var(--line);border-radius:10px;padding:9px 11px;}
+
+.appbar{padding:20px 0 8px;}
+.appbar-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.logo{display:flex;align-items:center;gap:11px;}
+.logo-mark.sm{width:42px;height:42px;font-size:19px;border-radius:13px;}
+.logo-txt .t1{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;}
+.logo-txt .t2{font-size:17px;font-weight:800;letter-spacing:-.02em;line-height:1.05;}
+.logo-txt .t2 span{background:linear-gradient(120deg,var(--grad-a),var(--grad-c));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.appbar-actions{display:flex;align-items:center;gap:8px;}
+.icon-btn{width:40px;height:40px;border-radius:13px;border:1px solid var(--glass-border);background:var(--panel);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);cursor:pointer;display:grid;place-items:center;color:var(--ink);font-size:16px;transition:transform .15s;}
+.icon-btn:hover{transform:translateY(-1px);}
+.avatar-btn{width:40px;height:40px;border-radius:13px;border:none;cursor:pointer;color:#fff;font-weight:800;font-size:15px;display:grid;place-items:center;background:linear-gradient(135deg,var(--grad-a),var(--grad-c));}
+
+.hero{margin-top:14px;border-radius:var(--r);padding:20px 22px;color:#fff;position:relative;overflow:hidden;background:linear-gradient(120deg,var(--grad-a),var(--grad-b) 42%,var(--grad-c));box-shadow:var(--shadow-lg);}
+.hero::after{content:"";position:absolute;right:-40px;top:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.16);}
+.hero-row{display:flex;align-items:center;justify-content:space-between;gap:16px;position:relative;z-index:1;flex-wrap:wrap;}
+.hero-hi{font-size:20px;font-weight:800;letter-spacing:-.02em;margin:0;}
+.hero-sub{font-size:12.5px;opacity:.9;margin:3px 0 0;}
+.hero-chips{display:flex;gap:8px;flex-wrap:wrap;}
+.hero-chip{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.28);border-radius:100px;padding:6px 12px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;}
+
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:16px 2px 4px;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab-btn{font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;background:var(--panel);border:1px solid var(--glass-border);color:var(--ink-soft);padding:9px 15px;border-radius:100px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);transition:all .18s;}
+.tab-btn:hover{color:var(--ink);}
+.tab-btn.active{background:linear-gradient(120deg,var(--grad-a),var(--grad-c));color:#fff;border-color:transparent;box-shadow:0 6px 18px rgba(124,92,255,.35);}
+.panel{display:none;padding-top:16px;animation:fade .3s ease;}
+.panel.active{display:block;}
+@keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+.card{background:var(--panel);border:1px solid var(--glass-border);border-radius:var(--r);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:14px;}
+.card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap;}
+.card-h h2{font-size:14.5px;font-weight:700;margin:0;letter-spacing:-.01em;}
+.card-h .eyebrow{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);font-weight:700;}
+.grid{display:grid;gap:14px;}
+.g-2{grid-template-columns:1fr 1fr;}.g-3{grid-template-columns:repeat(3,1fr);}.g-4{grid-template-columns:repeat(4,1fr);}
+@media(max-width:820px){.g-3,.g-4{grid-template-columns:repeat(2,1fr);}.g-2{grid-template-columns:1fr;}}
+
+.tile{background:var(--panel-solid);border:1px solid var(--line);border-radius:var(--r-sm);padding:15px;}
+.tile .ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:16px;margin-bottom:10px;}
+.ic-violet{background:var(--violet-weak);color:var(--violet);}.ic-orange{background:var(--orange-weak);color:var(--orange);}
+.ic-green{background:var(--green-weak);color:var(--green);}.ic-pink{background:rgba(245,88,155,.14);color:var(--pink);}
+.tile .k{font-size:11px;color:var(--ink-faint);font-weight:600;}
+.tile .v{font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-top:2px;}
+.tile .s{font-size:11px;color:var(--ink-soft);margin-top:3px;}
+
+.ring-wrap{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;}
+.ring{position:relative;width:132px;height:132px;flex-shrink:0;}
+.ring svg{transform:rotate(-90deg);}
+.ring .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+.ring .center .big{font-size:26px;font-weight:800;letter-spacing:-.03em;}
+.ring .center .lab{font-size:10.5px;color:var(--ink-soft);font-weight:600;margin-top:-2px;}
+.ring-legend{display:flex;flex-direction:column;gap:8px;}
+.ring-leg-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-soft);}
+.leg-dot{width:9px;height:9px;border-radius:3px;}
+
+.bar-row{display:grid;grid-template-columns:118px 1fr 46px;align-items:center;gap:10px;padding:7px 0;}
+.bar-name{font-size:12.5px;font-weight:600;}
+.track{height:9px;background:var(--line);border-radius:100px;overflow:hidden;}
+.fill{height:100%;border-radius:100px;transition:width .5s cubic-bezier(.4,0,.2,1);background:linear-gradient(90deg,var(--grad-a),var(--grad-c));}
+.bar-pct{font-size:11.5px;font-weight:700;color:var(--ink-soft);text-align:right;}
+
+.focus-chart{display:flex;align-items:flex-end;gap:8px;height:130px;padding-top:6px;}
+.fc-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end;}
+.fc-bar{width:100%;max-width:34px;border-radius:9px 9px 5px 5px;background:linear-gradient(180deg,var(--grad-a),var(--grad-c));min-height:6px;transition:height .5s cubic-bezier(.4,0,.2,1);}
+.fc-bar.today{box-shadow:0 0 0 3px var(--violet-weak);}
+.fc-val{font-size:10px;font-weight:700;color:var(--ink-soft);}
+.fc-day{font-size:10px;color:var(--ink-faint);font-weight:600;}
+
+.chip{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:3px 7px;border-radius:6px;white-space:nowrap;}
+.chip-fisica{background:#e6f0fb;color:#2255a4;}.chip-quimica{background:#f4e9fb;color:#7a3aad;}
+.chip-biologia{background:#e6f7ec;color:#1f7d43;}.chip-matematica{background:#fdeee4;color:#b85a1f;}
+.chip-redacao{background:#fdeaf0;color:#ad2a5f;}.chip-linguagens{background:#eafaf6;color:#0c7c6e;}
+.chip-simulado{background:#fff2df;color:#92600f;}.chip-rotina{background:#eef1f0;color:#5c6b66;}
+.chip-outro{background:#eee9fb;color:#6a4fb0;}
+[data-theme="dark"] .chip-fisica{background:#14263d;color:#8ab6f2;}[data-theme="dark"] .chip-quimica{background:#2a1d3a;color:#cf9ff0;}
+[data-theme="dark"] .chip-biologia{background:#12301e;color:#7fe0a3;}[data-theme="dark"] .chip-matematica{background:#3a2413;color:#f2a969;}
+[data-theme="dark"] .chip-redacao{background:#3a1626;color:#f292b6;}[data-theme="dark"] .chip-linguagens{background:#123028;color:#6fe0c6;}
+[data-theme="dark"] .chip-simulado{background:#3a2c10;color:#f2c169;}[data-theme="dark"] .chip-rotina{background:#1c2422;color:#9db2ab;}[data-theme="dark"] .chip-outro{background:#241d3a;color:#b9a3ee;}
+
+.task{display:flex;gap:11px;align-items:flex-start;padding:9px 8px;border-radius:12px;transition:background .15s;}
+.task:hover{background:var(--panel-solid);}
+.checkbox{width:20px;height:20px;border-radius:7px;border:2px solid var(--line);flex-shrink:0;margin-top:1px;cursor:pointer;display:grid;place-items:center;transition:all .18s;background:transparent;}
+.checkbox.on{background:linear-gradient(135deg,var(--grad-a),var(--grad-c));border-color:transparent;}
+.checkbox.on::after{content:"✓";color:#fff;font-size:12px;font-weight:800;}
+.task label{font-size:13px;cursor:pointer;flex:1;line-height:1.45;}
+.task.done label{color:var(--ink-faint);text-decoration:line-through;}
+.task .lead{display:flex;align-items:center;gap:7px;margin-bottom:3px;flex-wrap:wrap;}
+.xp-tag{font-size:9px;font-weight:700;color:var(--violet);background:var(--violet-weak);padding:2px 6px;border-radius:5px;}
+.task-del{margin-left:auto;background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:6px;}
+.task-del:hover{color:var(--red);background:var(--red-weak);}
+
+.score-input{width:64px;font-size:12.5px;font-weight:700;border:1px solid var(--line);border-radius:9px;padding:6px 8px;background:var(--panel-solid);color:var(--ink);text-align:right;}
+.score-input:focus{outline:2px solid var(--violet);}
+.note{font-size:12px;color:var(--ink-soft);background:var(--panel-solid);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:12px;line-height:1.55;}
+.note b{color:var(--ink);}
+
+.subnav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.subnav .mid{text-align:center;}
+.subnav .mid .l{font-size:14px;font-weight:700;}
+.subnav .mid .s{font-size:11px;color:var(--ink-faint);font-weight:600;}
+.pill-btn{background:var(--panel-solid);border:1px solid var(--line);color:var(--ink);border-radius:100px;padding:8px 14px;cursor:pointer;font-size:12.5px;font-weight:600;}
+.pill-btn:hover{background:var(--violet-weak);color:var(--violet);}
+
+.agenda-day{background:var(--panel-solid);border:1px solid var(--line);border-radius:var(--r-sm);margin-bottom:10px;overflow:hidden;}
+.agenda-day.off{opacity:.7;}
+.agenda-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;gap:10px;}
+.agenda-head .dl{display:flex;align-items:center;gap:10px;}
+.agenda-dot{width:30px;height:30px;border-radius:9px;background:var(--violet-weak);color:var(--violet);display:grid;place-items:center;font-size:11px;font-weight:800;}
+.agenda-dow{font-size:13.5px;font-weight:700;}
+.agenda-meta{font-size:11px;color:var(--ink-faint);font-weight:600;}
+.agenda-right{display:flex;align-items:center;gap:10px;}
+.agenda-frac{font-size:11px;font-weight:700;color:var(--ink-soft);}
+.agenda-body{display:none;padding:2px 12px 12px;}
+.agenda-day.open .agenda-body{display:block;}
+.agenda-day.open .chev{transform:rotate(90deg);}
+.chev{font-size:12px;color:var(--ink-faint);transition:transform .18s;}
+.addtask-btn{width:100%;border:1.5px dashed var(--line);background:transparent;color:var(--ink-soft);border-radius:11px;padding:9px;font-size:12px;font-weight:600;cursor:pointer;margin-top:6px;}
+.addtask-btn:hover{border-color:var(--violet);color:var(--violet);}
+.addtask-form{display:none;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;}
+.addtask-form.show{display:flex;}
+.addtask-form select,.addtask-form input{font-size:12.5px;border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:var(--panel-solid);color:var(--ink);}
+.addtask-form input[type=text]{flex:1;min-width:140px;}
+.mini-add{border:none;background:linear-gradient(120deg,var(--grad-a),var(--grad-c));color:#fff;font-weight:700;font-size:12px;border-radius:9px;padding:8px 14px;cursor:pointer;}
+
+.kfilters{display:flex;gap:9px;margin-bottom:16px;flex-wrap:wrap;}
+.kfilters select{font-size:12.5px;font-weight:600;background:var(--panel-solid);border:1px solid var(--line);color:var(--ink);padding:8px 12px;border-radius:11px;}
+.kboard{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+@media(max-width:820px){.kboard{grid-template-columns:1fr;}}
+.kcol{background:var(--panel-solid);border:1px solid var(--line);border-radius:var(--r-sm);padding:11px;min-height:150px;}
+.kcol h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin:2px 6px 12px;display:flex;justify-content:space-between;align-items:center;}
+.kcol .cnt{background:var(--violet-weak);color:var(--violet);border-radius:100px;padding:1px 8px;font-size:10px;}
+.kcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px;margin-bottom:9px;box-shadow:var(--shadow);}
+.kc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+.kc-s{font-size:9.5px;color:var(--ink-faint);font-weight:700;}
+.kc-text{font-size:12px;margin-bottom:9px;line-height:1.4;}
+.kc-act{display:flex;justify-content:space-between;gap:6px;}
+.kc-btn{flex:1;font-size:11px;font-weight:600;background:var(--panel-solid);border:1px solid var(--line);border-radius:8px;padding:5px;cursor:pointer;color:var(--ink-soft);}
+.kc-btn:hover{color:var(--violet);border-color:var(--violet);}
+.empty{text-align:center;color:var(--ink-faint);font-size:12px;padding:22px 0;font-weight:600;}
+
+.sprint{background:var(--panel-solid);border:1px solid var(--line);border-radius:var(--r-sm);margin-bottom:11px;overflow:hidden;}
+.sprint.now{border-color:var(--orange);box-shadow:0 0 0 1px var(--orange);}
+.sprint-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;cursor:pointer;gap:12px;flex-wrap:wrap;}
+.sh-left{display:flex;align-items:center;gap:11px;}
+.sh-num{font-size:11px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--grad-a),var(--grad-c));width:30px;height:30px;border-radius:9px;display:grid;place-items:center;}
+.sh-range{font-size:13.5px;font-weight:700;}
+.badge{font-size:9px;font-weight:700;padding:3px 9px;border-radius:100px;letter-spacing:.04em;text-transform:uppercase;}
+.b-done{background:var(--green-weak);color:var(--green);}.b-now{background:var(--orange-weak);color:var(--orange);}.b-plan{background:var(--line);color:var(--ink-faint);}
+.sh-right{display:flex;align-items:center;gap:11px;}
+.sh-mini{width:80px;}
+.sh-frac{font-size:11px;font-weight:700;color:var(--ink-soft);}
+.sprint.open .chev{transform:rotate(90deg);}
+.sprint-body{display:none;padding:0 16px 14px;}
+.sprint.open .sprint-body{display:block;}
+.sprint-goal{font-size:12px;color:var(--ink-soft);margin:2px 0 8px;line-height:1.5;}
+
+.utable{width:100%;border-collapse:collapse;font-size:12.5px;}
+.utable th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line);}
+.utable td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle;}
+.utable tr:last-child td{border-bottom:none;}
+.role-badge{font-size:9.5px;font-weight:700;padding:3px 9px;border-radius:100px;text-transform:uppercase;}
+.role-admin{background:var(--violet-weak);color:var(--violet);}.role-student{background:var(--green-weak);color:var(--green);}
+.mini-btn{font-size:11px;font-weight:600;border:1px solid var(--line);background:var(--panel-solid);color:var(--ink-soft);border-radius:8px;padding:5px 9px;cursor:pointer;margin-right:5px;}
+.mini-btn:hover{color:var(--violet);border-color:var(--violet);}
+.mini-btn.danger:hover{color:var(--red);border-color:var(--red);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:640px){.form-grid{grid-template-columns:1fr;}}
+.btn-line{border:1px solid var(--line);background:var(--panel-solid);color:var(--ink);border-radius:12px;padding:11px 16px;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-line:hover{border-color:var(--violet);color:var(--violet);}
+.btn-danger{border:1px solid var(--red);background:var(--red-weak);color:var(--red);border-radius:12px;padding:11px 16px;font-size:13px;font-weight:700;cursor:pointer;}
+textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--panel-solid);color:var(--ink);resize:vertical;}
+
+.empty-hero{text-align:center;padding:40px 20px;}
+.empty-hero .big-ic{font-size:44px;margin-bottom:10px;}
+.empty-hero h3{font-size:18px;font-weight:800;margin:0 0 6px;}
+.empty-hero p{font-size:13px;color:var(--ink-soft);max-width:420px;margin:0 auto 18px;}
+
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);font-size:12.5px;font-weight:600;padding:11px 18px;border-radius:100px;opacity:0;transition:all .28s;pointer-events:none;z-index:60;box-shadow:var(--shadow-lg);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.xp-pop{position:fixed;z-index:70;font-weight:800;font-size:16px;color:var(--violet);pointer-events:none;animation:xpfloat 1s ease forwards;}
+@keyframes xpfloat{0%{opacity:0;transform:translateY(0) scale(.6);}20%{opacity:1;transform:translateY(-8px) scale(1.1);}100%{opacity:0;transform:translateY(-46px) scale(1);}}
+
+.botnav{position:fixed;bottom:0;left:0;right:0;z-index:40;display:none;background:var(--panel);border-top:1px solid var(--glass-border);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);padding:8px 6px calc(8px + env(safe-area-inset-bottom));justify-content:space-around;overflow-x:auto;}
+.botnav button{background:none;border:none;color:var(--ink-faint);font-size:9px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 6px;border-radius:12px;flex:1;min-width:52px;}
+.botnav button .bi{font-size:18px;}
+.botnav button.active{color:var(--violet);}
+@media(max-width:720px){.botnav{display:flex;}.tabs{display:none;}.app-shell{padding-bottom:96px;}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+</style>
+</head>
+<body data-theme="light">
+
+<div class="auth-screen" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-form">
+      <div class="auth-logo"><div class="logo-mark">R</div><div><div class="t1">Rota Medicina</div><div class="t2">Planner ENEM</div></div></div>
+      <div id="loginView">
+        <h1 class="auth-title">Entrar</h1>
+        <p class="auth-desc">Acesse seu plano de estudos.</p>
+        <div class="auth-err" id="loginErr"></div>
+        <div class="field"><label>E-mail</label><input type="email" id="loginEmail" placeholder="voce@email.com" autocomplete="username"></div>
+        <div class="field"><label>Senha</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"></div>
+        <button class="btn-primary" id="loginBtn">Entrar</button>
+        <p class="auth-switch">Não tem conta? <a id="toSignup">Criar acesso</a></p>
+      </div>
+      <div id="signupView" class="hidden">
+        <h1 class="auth-title">Criar acesso</h1>
+        <p class="auth-desc">Comece seu planejamento rumo à aprovação.</p>
+        <div class="auth-err" id="signupErr"></div>
+        <div class="field"><label>Nome</label><input type="text" id="suName" placeholder="Seu nome"></div>
+        <div class="field"><label>E-mail</label><input type="email" id="suEmail" placeholder="voce@email.com" autocomplete="username"></div>
+        <div class="field"><label>Senha</label><input type="password" id="suPass" placeholder="mínimo 6 caracteres" autocomplete="new-password"></div>
+        <button class="btn-primary" id="signupBtn">Criar acesso</button>
+        <p class="auth-switch">Já tem conta? <a id="toLogin">Entrar</a></p>
+        <div class="sec-note">🔒 🔐 Sua conta e seus dados são sincronizados com o Supabase e ficam separados por usuário.</div>
+      </div>
+    </div>
+    <div class="auth-aside">
+      <h3>Seu plano, do jeito Apple: limpo, visual e gamificado.</h3>
+      <p>XP diário, streak, sprints e agenda semanal num só lugar.</p>
+      <ul class="aside-feats">
+        <li><span>⚡</span> XP e streak para manter o ritmo</li>
+        <li><span>🗓️</span> Agenda semanal com tarefas editáveis</li>
+        <li><span>📥</span> Importe seu plano gerado pela Claude</li>
+        <li><span>📊</span> Metas e progresso por área</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div id="app" class="app-shell hidden">
+<div class="wrap">
+  <header class="appbar">
+    <div class="appbar-inner">
+      <div class="logo"><div class="logo-mark sm">R</div><div class="logo-txt"><div class="t1">Rota Medicina</div><div class="t2">Planner <span>ENEM</span></div></div></div>
+      <div class="appbar-actions"><button class="icon-btn" id="themeToggle" title="Tema">🌙</button><button class="avatar-btn" id="avatarBtn" title="Perfil">B</button></div>
+    </div>
+    <div class="hero"><div class="hero-row">
+      <div><p class="hero-hi" id="heroHi">Olá 👋</p><p class="hero-sub" id="heroSub">Bora estudar.</p></div>
+      <div class="hero-chips"><span class="hero-chip">🔥 <b id="heroStreak">0</b> dias</span><span class="hero-chip">⚡ <b id="heroXP">0</b> XP hoje</span><span class="hero-chip">📅 <b id="heroDays">–</b> p/ prova</span></div>
+    </div></div>
+    <nav class="tabs" id="tabsNav"></nav>
+  </header>
+
+  <section class="panel active" data-panel="dashboard">
+    <div id="dashHasPlan">
+      <div class="grid g-2">
+        <div class="card"><div class="card-h"><span class="eyebrow">Meta do dia</span><h2>XP diário</h2></div>
+          <div class="ring-wrap">
+            <div class="ring"><svg width="132" height="132" viewBox="0 0 132 132"><circle cx="66" cy="66" r="56" fill="none" stroke="var(--line)" stroke-width="12"/><circle id="xpRing" cx="66" cy="66" r="56" fill="none" stroke="url(#gr)" stroke-width="12" stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352"/><defs><linearGradient id="gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="var(--grad-a)"/><stop offset="100%" stop-color="var(--grad-c)"/></linearGradient></defs></svg>
+              <div class="center"><div class="big" id="xpPct">0%</div><div class="lab" id="xpSub">0/40 XP</div></div></div>
+            <div class="ring-legend" id="xpLegend"></div>
+          </div>
+        </div>
+        <div class="card"><div class="card-h"><span class="eyebrow">Ritmo</span><h2>Foco desta semana</h2></div><div class="focus-chart" id="focusChart"></div></div>
+      </div>
+      <div class="grid g-4">
+        <div class="tile"><div class="ic ic-violet">📅</div><div class="k">Dias até a prova</div><div class="v" id="tDays">–</div><div class="s" id="tExam">estimativa</div></div>
+        <div class="tile"><div class="ic ic-orange">🎯</div><div class="k">Sprint atual</div><div class="v" id="tSprint">–</div><div class="s" id="tSprintName">–</div></div>
+        <div class="tile"><div class="ic ic-green">✅</div><div class="k">Progresso geral</div><div class="v" id="tProg">0%</div><div class="s" id="tProgCount">0/0</div></div>
+        <div class="tile"><div class="ic ic-pink">📊</div><div class="k">Média</div><div class="v" id="tAvg">–</div><div class="s" id="tAvgGoal">meta —</div></div>
+      </div>
+      <div class="grid g-2">
+        <div class="card"><div class="card-h"><span class="eyebrow">Trilhas</span><h2>Progresso por área</h2></div><div id="dashBars"></div></div>
+        <div class="card"><div class="card-h"><span class="eyebrow">Agora</span><h2>Tarefas do dia</h2></div><div id="dashNext"></div></div>
+      </div>
+    </div>
+    <div id="dashNoPlan" class="card hidden"><div class="empty-hero"><div class="big-ic">📥</div><h3>Nenhum plano importado ainda</h3><p>Peça à Claude para gerar seu plano em JSON (modelo na aba <b>Perfil → Importar</b>) e importe para começar.</p><button class="btn-primary" style="max-width:260px;margin:0 auto;" id="emptyImportBtn">Importar plano</button></div></div>
+  </section>
+
+  <section class="panel" data-panel="metas">
+    <div class="card"><div class="card-h"><span class="eyebrow">Notas</span><h2>Onde estou × onde preciso chegar</h2></div><div id="scoreRows"></div><div class="note" id="metasNote"></div></div>
+  </section>
+
+  <section class="panel" data-panel="progresso">
+    <div class="card"><div class="card-h"><span class="eyebrow">Visão macro</span><h2>Progresso do plano</h2></div><div class="bar-row" style="grid-template-columns:1fr 52px;"><div class="track"><div class="fill" id="progBar" style="width:0%"></div></div><div class="bar-pct" id="progPct">0%</div></div></div>
+    <div class="grid g-2">
+      <div class="card"><div class="card-h"><span class="eyebrow">Por matéria</span><h2>Áreas</h2></div><div id="progArea"></div></div>
+      <div class="card"><div class="card-h"><span class="eyebrow">Por etapa</span><h2>Fases</h2></div><div id="progPhase"></div></div>
+    </div>
+    <div class="card"><div class="card-h"><span class="eyebrow">Consistência</span><h2>Conclusão por sprint</h2></div><div class="focus-chart" id="progSprint" style="height:120px;"></div></div>
+  </section>
+
+  <section class="panel" data-panel="semanal">
+    <div class="card"><div class="subnav"><button class="pill-btn" id="wPrev">‹ Anterior</button><div class="mid"><div class="l" id="wLabel">–</div><div class="s" id="wSub">–</div></div><button class="pill-btn" id="wNext">Próximo ›</button></div><div id="agenda"></div></div>
+  </section>
+
+  <section class="panel" data-panel="kanban">
+    <div class="card"><div class="kfilters"><select id="kSprint"></select><select id="kArea"></select></div><div class="kboard" id="kboard"></div></div>
+  </section>
+
+  <section class="panel" data-panel="sprints"><div id="sprintsList"></div></section>
+
+  <section class="panel" data-panel="perfil">
+    <div class="card"><div class="card-h"><span class="eyebrow">Conta</span><h2>Meu perfil</h2></div>
+      <div class="form-grid">
+        <div class="field"><label>Nome</label><input type="text" id="pfName"></div>
+        <div class="field"><label>E-mail</label><input type="email" id="pfEmail" disabled></div>
+        <div class="field"><label>Curso / meta</label><input type="text" id="pfCourse" placeholder="Ex: Medicina - UNIFIP Patos"></div>
+        <div class="field"><label>Meta de XP diário</label><input type="number" id="pfXp" min="10" step="10"></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;"><button class="btn-primary" style="max-width:200px;" id="pfSave">Salvar perfil</button><button class="btn-danger" id="logoutBtn">Sair da conta</button></div>
+    </div>
+    <div class="card"><div class="card-h"><span class="eyebrow">Plano de estudos</span><h2>Importar / Exportar</h2></div>
+      <p style="font-size:13px;color:var(--ink-soft);margin-top:0;">Cole o JSON gerado pela Claude ou selecione um arquivo <b>.json</b>. Você também pode exportar seu plano atual como backup.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        <label class="btn-line" style="cursor:pointer;">📁 Selecionar arquivo<input type="file" id="planFile" accept=".json,application/json" class="hidden"></label>
+        <button class="btn-line" id="exportBtn">⬇️ Exportar meu plano</button>
+        <button class="btn-line" id="modelBtn">📄 Ver modelo de JSON</button>
+      </div>
+      <textarea class="code" id="planPaste" placeholder="Cole aqui o JSON do plano..."></textarea>
+      <div style="margin-top:10px;"><button class="btn-primary" style="max-width:220px;" id="importPasteBtn">Importar do texto</button></div>
+      <div class="note" style="margin-top:14px;"><b>Como gerar com a Claude:</b> peça “monte meu plano de estudos para o ENEM no formato JSON do Rota Medicina” e cole o modelo (botão acima) na conversa para ela seguir o schema.</div>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="admin">
+    <div class="card"><div class="card-h"><span class="eyebrow">Administração</span><h2>Gerenciar acessos</h2></div><div style="overflow-x:auto;"><table class="utable" id="usersTable"></table></div><div class="note" style="margin-top:14px;">O primeiro cadastro vira <b>admin</b> automaticamente. Aqui você promove/rebaixa papéis, vê quem já importou plano e remove acessos. Na versão Supabase, isso passa a usar a tabela de usuários com RLS.</div></div>
+    <div class="card"><div class="card-h"><span class="eyebrow">Onboarding de alunos</span><h2>Relatório de requisição de dados</h2></div><p style="font-size:13px;color:var(--ink-soft);margin-top:0;">Envie este roteiro para o aluno responder. Com as respostas, a Claude gera o plano em JSON, que o aluno importa no app.</p><button class="btn-line" id="copyReqBtn">📋 Copiar roteiro de requisição</button><textarea class="code" id="reqText" style="margin-top:12px;min-height:220px;" readonly></textarea></div>
+  </section>
+
+</div>
+</div>
+
+<nav class="botnav hidden" id="botnav"></nav>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================================
+   ROTA MEDICINA · Planner ENEM
+   Supabase Auth + Supabase Database
+   - Auth: Supabase Authentication
+   - Profile: public.profiles
+   - Plano/progresso: public.plans
+   - localStorage: somente cache/offline e preferência visual
+   ============================================================================ */
+const SUPABASE_URL = 'https://qcszgshitvsohjgzyhqn.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_2tnpJZ4sKNR_qfpNDEA7BA_Y468229R';
+
+if (!window.supabase) {
+  throw new Error('Supabase SDK não carregou. Verifique a tag do SDK no <head>.');
+}
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+const CLOUD = true;
+
+/* --- storage local (com fallback em memória p/ ambientes que bloqueiam) --- */
+const mem = {};
+const LS = {
+  get(k){ try{const r=localStorage.getItem(k);return r?JSON.parse(r):null;}catch(e){return (k in mem)?mem[k]:null;} },
+  set(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){mem[k]=v;} },
+  del(k){ try{localStorage.removeItem(k);}catch(e){delete mem[k];} },
+};
+
+/* --- hash simples só p/ modo local (NÃO seguro; Supabase Auth cuida do real) --- */
+function hash(s){ let h=5381; for(let i=0;i<s.length;i++){h=((h<<5)+h)+s.charCodeAt(i);h|=0;} return String(h); }
+function uid(){ return 'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+/* ============================ AUTH API ============================ */
+const SESS_KEY='rm-session'; // mantido apenas para compatibilidade local; Supabase Auth é a sessão oficial.
+
+const authApi = {
+  async signup(name, email, pass) {
+    email = (email || '').trim().toLowerCase();
+    name = (name || '').trim();
+
+    if (!name || !email || !pass) throw new Error('Preencha todos os campos.');
+    if (pass.length < 6) throw new Error('A senha precisa ter ao menos 6 caracteres.');
+
+    const { data, error } = await sb.auth.signUp({
+      email,
+      password: pass,
+      options: {
+        data: { name }
+      }
+    });
+
+    if (error) throw error;
+
+    const user = data.user;
+    if (!user) throw new Error('Não foi possível criar a conta.');
+
+    // Cria/atualiza o perfil do usuário.
+    const { error: profileError } = await sb
+      .from('profiles')
+      .upsert({
+        id: user.id,
+        name,
+        email,
+        role: 'student',
+        course: '',
+        daily_xp: 40
+      }, { onConflict: 'id' });
+
+    if (profileError) {
+      console.error('Erro ao criar perfil:', profileError);
+      throw new Error('A conta foi criada, mas o perfil não pôde ser salvo.');
+    }
+
+    // Se a confirmação de e-mail estiver desativada no Supabase,
+    // o usuário já terá uma sessão. Caso contrário, avisamos para confirmar.
+    if (!data.session) {
+      throw new Error('Conta criada! Verifique seu e-mail para confirmar a conta e depois faça login.');
+    }
+
+    return user;
+  },
+
+  async login(email, pass) {
+    email = (email || '').trim().toLowerCase();
+
+    if (!email || !pass) throw new Error('Informe e-mail e senha.');
+
+    const { data, error } = await sb.auth.signInWithPassword({
+      email,
+      password: pass
+    });
+
+    if (error) throw error;
+    if (!data.user) throw new Error('Não foi possível entrar.');
+
+    return data.user;
+  },
+
+  async logout() {
+    const { error } = await sb.auth.signOut();
+    if (error) throw error;
+  },
+
+  async current() {
+    const { data: { user }, error } = await sb.auth.getUser();
+    if (error) {
+      console.error('Erro ao recuperar sessão:', error);
+      return null;
+    }
+    return user || null;
+  },
+
+  async getProfile(userId) {
+    const { data, error } = await sb
+      .from('profiles')
+      .select('id,name,email,role,course,daily_xp,created_at')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (data) return data;
+
+    // Compatibilidade: se o usuário existe no Auth mas o perfil não existe,
+    // cria um perfil mínimo.
+    const fallback = {
+      id: userId,
+      name: '',
+      email: '',
+      role: 'student',
+      course: '',
+      daily_xp: 40
+    };
+
+    const { data: created, error: createError } = await sb
+      .from('profiles')
+      .upsert(fallback, { onConflict: 'id' })
+      .select()
+      .single();
+
+    if (createError) throw createError;
+    return created;
+  },
+
+  async updateProfile(patch) {
+    const user = await authApi.current();
+    if (!user) throw new Error('Sessão expirada. Entre novamente.');
+
+    const payload = {
+      id: user.id,
+      name: patch.name ?? '',
+      email: user.email,
+      role: patch.role ?? 'student',
+      course: patch.course ?? '',
+      daily_xp: Number(patch.dailyXp ?? patch.daily_xp ?? 40)
+    };
+
+    const { data, error } = await sb
+      .from('profiles')
+      .upsert(payload, { onConflict: 'id' })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+};
+
+/* ============================ PER-USER STORE ============================ */
+let ME = null;
+let CLOUD_DATA = {
+  plan: null,
+  status: {},
+  log: {},
+  scores: {}
+};
+
+function uk(s) {
+  return `rm:${ME?.id || 'anonymous'}:${s}`;
+}
+
+const store = {
+  get(s) {
+    if (Object.prototype.hasOwnProperty.call(CLOUD_DATA, s)) {
+      return CLOUD_DATA[s];
+    }
+    return null;
+  },
+
+  set(s, v) {
+    CLOUD_DATA[s] = v;
+    // Mantém um cache local para melhorar a experiência offline.
+    LS.set(uk(s), v);
+    queueCloudSave();
+  }
+};
+
+let saveTimer = null;
+let saveInFlight = false;
+
+function queueCloudSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    cloudSave().catch(err => console.error('Erro ao sincronizar com Supabase:', err));
+  }, 250);
+}
+
+async function cloudLoad() {
+  if (!ME?.id) return;
+
+  const { data, error } = await sb
+    .from('plans')
+    .select('plan,status,log,scores')
+    .eq('user_id', ME.id)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  CLOUD_DATA = {
+    plan: data?.plan || null,
+    status: data?.status || {},
+    log: data?.log || {},
+    scores: data?.scores || {}
+  };
+
+  // Cache local apenas como fallback visual.
+  Object.entries(CLOUD_DATA).forEach(([k, v]) => LS.set(uk(k), v));
+}
+
+async function cloudSave() {
+  if (!ME?.id || saveInFlight) return;
+
+  saveInFlight = true;
+
+  try {
+    const payload = {
+      user_id: ME.id,
+      plan: CLOUD_DATA.plan,
+      status: CLOUD_DATA.status,
+      log: CLOUD_DATA.log,
+      scores: CLOUD_DATA.scores,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await sb
+      .from('plans')
+      .upsert(payload, { onConflict: 'user_id' });
+
+    if (error) throw error;
+  } finally {
+    saveInFlight = false;
+  }
+}
+
+/* ============================ DADOS DERIVADOS DO PLANO ============================ */
+const AREA_LABELS={fisica:'Física',quimica:'Química',biologia:'Biologia',matematica:'Matemática',redacao:'Redação',linguagens:'Ling/Hum',simulado:'Simulado',rotina:'Rotina',outro:'Outro'};
+const AREA_DAY={fisica:0,quimica:1,matematica:1,linguagens:2,biologia:3,simulado:4,redacao:6,rotina:6,outro:0};
+const DOW=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+const PHASE_COLORS={};
+const XP_PER_TASK=10;
+
+let PLAN=null;          // {student,course,goalAvg,cutoffNote,dailyXpGoal,examDate,scoreAreas,phases,customTasks}
+let sprints=[], taskIndex={};
+let statusMap={}, completionLog={}, scoreLog={};
+
+function buildFromPlan(){
+  sprints=[]; taskIndex={};
+  if(!PLAN) return;
+  let s=0;
+  (PLAN.phases||[]).forEach(ph=>{
+    (ph.weeks||[]).forEach(w=>{
+      s++;
+      const tasks=(w.tasks||[]).map((t,i)=>{const id=`s${s}-t${i}`;taskIndex[id]={area:t[0],text:t[1],sprintIndex:s,phaseId:ph.id,custom:false};return{id,area:t[0],text:t[1]};});
+      sprints.push({sprintIndex:s,phaseId:ph.id,phaseTag:ph.tag,phaseTitle:ph.title,phaseGoal:ph.goal||'',start:w.start,end:w.end,tasks});
+    });
+  });
+  // custom tasks
+  (PLAN.customTasks||[]).forEach(ct=>{
+    taskIndex[ct.id]={area:ct.area,text:ct.text,sprintIndex:ct.sprintIndex,phaseId:'custom',custom:true,dayIdx:ct.dayIdx};
+    const sp=sprints[ct.sprintIndex-1]; if(sp) sp.tasks.push({id:ct.id,area:ct.area,text:ct.text,custom:true,dayIdx:ct.dayIdx});
+  });
+}
+
+/* ============================ GAMIFICAÇÃO / PROGRESSO ============================ */
+function todayISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function getStatus(id){return statusMap[id]||'todo';}
+function isDone(id){return getStatus(id)==='done';}
+function saveProgress(){store.set('status',statusMap);store.set('log',completionLog);}
+function dailyGoal(){return (PLAN&&PLAN.dailyXpGoal)||ME.dailyXp||40;}
+function xpToday(){const t=todayISO();return Object.values(completionLog).filter(d=>d===t).length*XP_PER_TASK;}
+function streakDays(){const set=new Set(Object.values(completionLog));if(!set.size)return 0;const iso=x=>`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;let st=0,d=new Date();if(!set.has(iso(d)))d.setDate(d.getDate()-1);while(set.has(iso(d))){st++;d.setDate(d.getDate()-1);}return st;}
+function weeklyFocus(){const now=new Date(),dow=(now.getDay()+6)%7,mon=new Date(now);mon.setDate(now.getDate()-dow);mon.setHours(0,0,0,0);const c=[0,0,0,0,0,0,0];Object.values(completionLog).forEach(iso=>{const d=new Date(iso+'T12:00:00'),diff=Math.floor((d-mon)/86400000);if(diff>=0&&diff<7)c[diff]++;});return{c,dow};}
+function setDone(id,done,ev){const was=isDone(id);statusMap[id]=done?'done':'todo';if(done&&!was){completionLog[id]=todayISO();if(ev)xpPop(ev);}if(!done)delete completionLog[id];saveProgress();renderAll();}
+function cycle(id,fwd){const s=getStatus(id);const ns=fwd?(s==='todo'?'doing':s==='doing'?'done':'todo'):(s==='done'?'doing':s==='doing'?'todo':'done');const was=isDone(id);statusMap[id]=ns;if(ns==='done'&&!was)completionLog[id]=todayISO();if(ns!=='done')delete completionLog[id];saveProgress();renderAll();}
+function areaProg(a){const ids=Object.keys(taskIndex).filter(id=>taskIndex[id].area===a);const d=ids.filter(isDone).length;return{d,t:ids.length,pct:ids.length?Math.round(d/ids.length*100):0};}
+function phaseProg(p){const ids=Object.keys(taskIndex).filter(id=>taskIndex[id].phaseId===p);const d=ids.filter(isDone).length;return{d,t:ids.length,pct:ids.length?Math.round(d/ids.length*100):0};}
+function overallProg(){const ids=Object.keys(taskIndex);const d=ids.filter(isDone).length;return{d,t:ids.length,pct:ids.length?Math.round(d/ids.length*100):0};}
+function currentSprint(){if(!sprints.length)return null;const now=new Date();let f=sprints.find(s=>now>=new Date(s.start+'T00:00:00')&&now<=new Date(s.end+'T23:59:59'));if(f)return f;if(now<new Date(sprints[0].start))return sprints[0];return sprints[sprints.length-1];}
+function fmtBR(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return `${d}/${m}`;}
+function examDate(){return PLAN&&PLAN.examDate?new Date(PLAN.examDate+'T08:00:00'):null;}
+
+/* ============================ TABS ============================ */
+const BASE_TABS=[['dashboard','Início','🏠'],['metas','Metas','🎯'],['progresso','Progresso','📈'],['semanal','Semana','🗓️'],['kanban','Kanban','🗂️'],['sprints','Sprints','⚡'],['perfil','Perfil','👤']];
+function tabsFor(){const t=BASE_TABS.slice();if(ME&&ME.role==='admin')t.push(['admin','Admin','🛠️']);return t;}
+function renderTabs(){
+  const tabs=tabsFor();
+  document.getElementById('tabsNav').innerHTML=tabs.map((t,i)=>`<button class="tab-btn${i===0?' active':''}" data-tab="${t[0]}">${t[1]}</button>`).join('');
+  document.getElementById('botnav').innerHTML=tabs.map((t,i)=>`<button class="${i===0?'active':''}" data-tab="${t[0]}"><span class="bi">${t[2]}</span>${t[1]}</button>`).join('');
+  document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+}
+function switchTab(id){document.querySelectorAll('.tab-btn,.botnav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===id));window.scrollTo({top:0,behavior:'smooth'});}
+
+/* ============================ RENDER ============================ */
+function taskRow(id,t){
+  const del=t.custom?`<button class="task-del" data-del="${id}" title="Remover">✕</button>`:'';
+  return `<div class="task${isDone(id)?' done':''}"><div class="checkbox${isDone(id)?' on':''}" data-id="${id}"></div><label data-id="${id}"><span class="lead"><span class="chip chip-${t.area}">${AREA_LABELS[t.area]||t.area}</span><span class="xp-tag">+${XP_PER_TASK} XP</span>${t.custom?'<span class="xp-tag" style="color:var(--orange);background:var(--orange-weak)">manual</span>':''}</span>${t.text}</label>${del}</div>`;
+}
+function bindTasks(scope){
+  scope.querySelectorAll('.checkbox[data-id]').forEach(cb=>cb.addEventListener('click',e=>setDone(cb.dataset.id,!isDone(cb.dataset.id),e)));
+  scope.querySelectorAll('label[data-id]').forEach(l=>l.addEventListener('click',e=>setDone(l.dataset.id,!isDone(l.dataset.id),e)));
+  scope.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();removeCustom(b.dataset.del);}));
+}
+
+function renderHero(){
+  document.getElementById('heroHi').textContent=`Olá, ${ME.name.split(' ')[0]} 👋`;
+  document.getElementById('heroSub').textContent=PLAN?(PLAN.course||'Bora estudar.'):'Importe seu plano para começar.';
+  document.getElementById('avatarBtn').textContent=(ME.name[0]||'?').toUpperCase();
+  const ed=examDate(); document.getElementById('heroDays').textContent=ed?Math.max(0,Math.ceil((ed-new Date())/86400000)):'–';
+  document.getElementById('heroStreak').textContent=PLAN?streakDays():0;
+  document.getElementById('heroXP').textContent=PLAN?xpToday():0;
+}
+function ringSet(pct){const c=2*Math.PI*56,off=c-(Math.min(100,pct)/100)*c;document.getElementById('xpRing').style.strokeDashoffset=off;}
+function renderDashboard(){
+  const has=!!PLAN;
+  document.getElementById('dashHasPlan').classList.toggle('hidden',!has);
+  document.getElementById('dashNoPlan').classList.toggle('hidden',has);
+  if(!has)return;
+  const ed=examDate();
+  document.getElementById('tDays').textContent=ed?Math.max(0,Math.ceil((ed-new Date())/86400000)):'–';
+  document.getElementById('tExam').textContent=ed?('prova '+fmtBR(PLAN.examDate)):'sem data';
+  const cs=currentSprint();
+  document.getElementById('tSprint').textContent=cs?('S'+cs.sprintIndex):'–';
+  document.getElementById('tSprintName').textContent=cs?(cs.phaseTag+' · '+cs.phaseTitle):'—';
+  const op=overallProg();
+  document.getElementById('tProg').textContent=op.pct+'%';document.getElementById('tProgCount').textContent=`${op.d}/${op.t} tarefas`;
+  const sa=PLAN.scoreAreas||[];let sum=0;sa.forEach(a=>sum+=scoreLog[a.key]!==undefined?parseFloat(scoreLog[a.key]):a.current);
+  document.getElementById('tAvg').textContent=sa.length?(sum/sa.length).toFixed(1):'–';
+  document.getElementById('tAvgGoal').textContent=PLAN.goalAvg?('meta '+PLAN.goalAvg):'meta —';
+
+  const xp=xpToday(),g=dailyGoal(),pct=Math.round(Math.min(100,xp/g*100));
+  document.getElementById('xpPct').textContent=pct+'%';document.getElementById('xpSub').textContent=`${xp}/${g} XP`;ringSet(pct);
+  document.getElementById('xpLegend').innerHTML=`<div class="ring-leg-item"><span class="leg-dot" style="background:var(--violet)"></span>🔥 Streak: <b>${streakDays()} dias</b></div><div class="ring-leg-item"><span class="leg-dot" style="background:var(--orange)"></span>⚡ Hoje: <b>${xp} XP</b></div><div class="ring-leg-item"><span class="leg-dot" style="background:var(--green)"></span>🎯 Meta: <b>${g} XP/dia</b></div>`;
+
+  const {c,dow}=weeklyFocus(),max=Math.max(1,...c);
+  document.getElementById('focusChart').innerHTML=DOW.map((d,i)=>`<div class="fc-col"><div class="fc-val">${c[i]||''}</div><div class="fc-bar${i===dow?' today':''}" style="height:${Math.max(6,c[i]/max*100)}%"></div><div class="fc-day">${d}</div></div>`).join('');
+
+  const areas=[...new Set(Object.values(taskIndex).map(t=>t.area))];
+  document.getElementById('dashBars').innerHTML=areas.map(a=>{const p=areaProg(a);return `<div class="bar-row"><div class="bar-name">${AREA_LABELS[a]||a}</div><div class="track"><div class="fill" style="width:${p.pct}%"></div></div><div class="bar-pct">${p.pct}%</div></div>`;}).join('')||'<div class="empty">Sem áreas</div>';
+
+  const cur=cs?cs.tasks.map(t=>t.id).filter(id=>!isDone(id)):[];
+  const list=(cur.length?cur:Object.keys(taskIndex).filter(id=>!isDone(id))).slice(0,6);
+  const el=document.getElementById('dashNext');
+  el.innerHTML=list.length?list.map(id=>taskRow(id,taskIndex[id])).join(''):'<div class="empty">Tudo em dia ✨</div>';
+  bindTasks(el);
+}
+
+function renderMetas(){
+  const el=document.getElementById('scoreRows');
+  if(!PLAN||!(PLAN.scoreAreas&&PLAN.scoreAreas.length)){el.innerHTML='<div class="empty">Importe um plano com áreas de nota para ver suas metas.</div>';document.getElementById('metasNote').textContent='';return;}
+  el.innerHTML=PLAN.scoreAreas.map(a=>{const v=scoreLog[a.key]!==undefined?parseFloat(scoreLog[a.key]):a.current;const pct=Math.min(100,v/a.target*100);return `<div class="bar-row" style="grid-template-columns:130px 1fr 72px;"><div class="bar-name">${a.name}</div><div class="track"><div class="fill" style="width:${pct}%"></div></div><input class="score-input" type="number" step="0.1" value="${v}" data-area="${a.key}"></div><div style="font-size:10.5px;color:var(--ink-faint);font-weight:600;margin:-2px 0 6px;">atual ${(+v).toFixed(1)} → meta ${a.target}</div>`;}).join('');
+  el.querySelectorAll('.score-input').forEach(inp=>inp.addEventListener('change',e=>{scoreLog[e.target.dataset.area]=e.target.value;store.set('scores',scoreLog);renderAll();}));
+  document.getElementById('metasNote').innerHTML=PLAN.cutoffNote||'';
+}
+
+function renderProgresso(){
+  const op=overallProg();
+  document.getElementById('progBar').style.width=op.pct+'%';document.getElementById('progPct').textContent=op.pct+'%';
+  const areas=[...new Set(Object.values(taskIndex).map(t=>t.area))];
+  document.getElementById('progArea').innerHTML=areas.map(a=>{const p=areaProg(a);return `<div class="bar-row"><div class="bar-name">${AREA_LABELS[a]||a}</div><div class="track"><div class="fill" style="width:${p.pct}%"></div></div><div class="bar-pct">${p.d}/${p.t}</div></div>`;}).join('')||'<div class="empty">—</div>';
+  const phases=(PLAN&&PLAN.phases)||[];
+  document.getElementById('progPhase').innerHTML=phases.map(ph=>{const p=phaseProg(ph.id);return `<div class="bar-row"><div class="bar-name">${ph.tag}</div><div class="track"><div class="fill" style="width:${p.pct}%"></div></div><div class="bar-pct">${p.pct}%</div></div>`;}).join('')||'<div class="empty">—</div>';
+  document.getElementById('progSprint').innerHTML=sprints.map(s=>{const ids=s.tasks.map(t=>t.id);const d=ids.filter(isDone).length;const pct=ids.length?Math.round(d/ids.length*100):0;return `<div class="fc-col"><div class="fc-val">${pct||''}</div><div class="fc-bar" style="height:${Math.max(6,pct)}%"></div><div class="fc-day">S${s.sprintIndex}</div></div>`;}).join('')||'<div class="empty">—</div>';
+}
+
+/* ---- SEMANAL: agenda expansível + adicionar tarefa ---- */
+let wIdx=null, openDays={};
+function renderSemanal(){
+  const wrap=document.getElementById('agenda');
+  if(!sprints.length){wrap.innerHTML='<div class="empty">Importe um plano para ver a agenda semanal.</div>';document.getElementById('wLabel').textContent='—';document.getElementById('wSub').textContent='';return;}
+  if(wIdx===null){const cs=currentSprint();wIdx=cs?cs.sprintIndex:1;}
+  const s=sprints[wIdx-1];
+  document.getElementById('wLabel').textContent=`Sprint ${s.sprintIndex} · ${s.phaseTag} — ${s.phaseTitle}`;
+  document.getElementById('wSub').textContent=`${fmtBR(s.start)} – ${fmtBR(s.end)}`;
+  wrap.innerHTML=DOW.map((label,di)=>{
+    const off=di===5;
+    const dts=s.tasks.filter(t=>{const day=(t.dayIdx!==undefined)?t.dayIdx:AREA_DAY[t.area];return day===di;});
+    const done=dts.filter(t=>isDone(t.id)).length;
+    const open=openDays[`${wIdx}-${di}`]||false;
+    const body=`${dts.length?dts.map(t=>taskRow(t.id,taskIndex[t.id])).join(''):'<div class="empty" style="padding:12px 0;">Sem tarefas neste dia</div>'}
+      <button class="addtask-btn" data-addbtn="${di}">+ Adicionar tarefa</button>
+      <div class="addtask-form" data-addform="${di}">
+        <select data-area>${Object.keys(AREA_LABELS).map(a=>`<option value="${a}">${AREA_LABELS[a]}</option>`).join('')}</select>
+        <input type="text" data-text placeholder="Descrição da tarefa...">
+        <button class="mini-add" data-save="${di}">Adicionar</button>
+      </div>`;
+    return `<div class="agenda-day${off?' off':''}${open?' open':''}" data-day="${di}">
+      <div class="agenda-head" data-toggle="${di}">
+        <div class="dl"><span class="agenda-dot">${label}</span><div><div class="agenda-dow">${['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'][di]}</div><div class="agenda-meta">${off?'Descanso sugerido':`${dts.length} tarefa(s)`}</div></div></div>
+        <div class="agenda-right"><span class="agenda-frac">${done}/${dts.length}</span><span class="chev">▸</span></div>
+      </div>
+      <div class="agenda-body">${body}</div>
+    </div>`;
+  }).join('');
+  // toggles
+  wrap.querySelectorAll('.agenda-head').forEach(h=>h.addEventListener('click',()=>{const di=h.dataset.toggle;const card=h.closest('.agenda-day');const op=!card.classList.contains('open');card.classList.toggle('open',op);openDays[`${wIdx}-${di}`]=op;}));
+  // add task buttons
+  wrap.querySelectorAll('[data-addbtn]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const f=wrap.querySelector(`[data-addform="${b.dataset.addbtn}"]`);f.classList.toggle('show');}));
+  wrap.querySelectorAll('[data-save]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const di=parseInt(b.dataset.save);const f=wrap.querySelector(`[data-addform="${di}"]`);const area=f.querySelector('[data-area]').value;const text=f.querySelector('[data-text]').value.trim();if(!text){toast('Escreva a tarefa.');return;}addCustom(wIdx,di,area,text);}));
+  bindTasks(wrap);
+}
+document.getElementById('wPrev').addEventListener('click',()=>{if(wIdx>1){wIdx--;renderSemanal();}});
+document.getElementById('wNext').addEventListener('click',()=>{if(wIdx<sprints.length){wIdx++;renderSemanal();}});
+
+function addCustom(sprintIndex,dayIdx,area,text){
+  PLAN.customTasks=PLAN.customTasks||[];
+  const id='c'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  PLAN.customTasks.push({id,sprintIndex,dayIdx,area,text});
+  store.set('plan',PLAN);buildFromPlan();openDays[`${sprintIndex}-${dayIdx}`]=true;renderAll();toast('Tarefa adicionada.');
+}
+function removeCustom(id){
+  if(!PLAN.customTasks)return;
+  PLAN.customTasks=PLAN.customTasks.filter(t=>t.id!==id);
+  delete statusMap[id];delete completionLog[id];
+  store.set('plan',PLAN);saveProgress();buildFromPlan();renderAll();toast('Tarefa removida.');
+}
+
+/* ---- KANBAN ---- */
+function renderKanban(){
+  const sf=document.getElementById('kSprint'),af=document.getElementById('kArea');
+  if(!sprints.length){document.getElementById('kboard').innerHTML='<div class="empty">Importe um plano para usar o Kanban.</div>';return;}
+  const cs=currentSprint();
+  sf.innerHTML=`<option value="current">Sprint atual${cs?` (S${cs.sprintIndex})`:''}</option><option value="all">Todos os sprints</option>`+sprints.map(s=>`<option value="${s.sprintIndex}">Sprint ${s.sprintIndex} — ${s.phaseTag}</option>`).join('');
+  const areas=[...new Set(Object.values(taskIndex).map(t=>t.area))];
+  af.innerHTML=`<option value="all">Todas as áreas</option>`+areas.map(a=>`<option value="${a}">${AREA_LABELS[a]||a}</option>`).join('');
+  if(!sf.dataset.b){sf.dataset.b='1';sf.addEventListener('change',drawKanban);af.addEventListener('change',drawKanban);}
+  drawKanban();
+}
+function drawKanban(){
+  const sf=document.getElementById('kSprint').value||'current',af=document.getElementById('kArea').value||'all';
+  const cs=currentSprint();
+  let ids=Object.keys(taskIndex);
+  if(sf==='current'&&cs)ids=ids.filter(id=>taskIndex[id].sprintIndex===cs.sprintIndex);
+  else if(sf!=='all'&&sf!=='current')ids=ids.filter(id=>taskIndex[id].sprintIndex===parseInt(sf));
+  if(af!=='all')ids=ids.filter(id=>taskIndex[id].area===af);
+  const cols={todo:[],doing:[],done:[]};ids.forEach(id=>cols[getStatus(id)].push(id));
+  const def=[['todo','A Fazer'],['doing','Fazendo'],['done','Concluído']];
+  document.getElementById('kboard').innerHTML=def.map(([k,lab])=>`<div class="kcol"><h3>${lab}<span class="cnt">${cols[k].length}</span></h3>${cols[k].length?cols[k].map(id=>{const t=taskIndex[id];return `<div class="kcard"><div class="kc-top"><span class="chip chip-${t.area}">${AREA_LABELS[t.area]||t.area}</span><span class="kc-s">S${t.sprintIndex}</span></div><div class="kc-text">${t.text}</div><div class="kc-act"><button class="kc-btn" data-b="${id}">‹</button><button class="kc-btn" data-f="${id}">avançar ›</button></div></div>`;}).join(''):'<div class="empty">Vazio</div>'}</div>`).join('');
+  document.querySelectorAll('[data-f]').forEach(b=>b.addEventListener('click',()=>cycle(b.dataset.f,true)));
+  document.querySelectorAll('[data-b]').forEach(b=>b.addEventListener('click',()=>cycle(b.dataset.b,false)));
+}
+
+/* ---- SPRINTS ---- */
+let openSp={};
+function renderSprints(){
+  const el=document.getElementById('sprintsList');
+  if(!sprints.length){el.innerHTML='<div class="card"><div class="empty">Importe um plano para ver os sprints.</div></div>';return;}
+  const cs=currentSprint();
+  el.innerHTML=sprints.map(s=>{
+    const ids=s.tasks.map(t=>t.id),d=ids.filter(isDone).length,pct=ids.length?Math.round(d/ids.length*100):0;
+    const isNow=cs&&s.sprintIndex===cs.sprintIndex,open=openSp[s.sprintIndex]??isNow;
+    const badge=pct===100?'<span class="badge b-done">concluído</span>':isNow?'<span class="badge b-now">em andamento</span>':'<span class="badge b-plan">planejado</span>';
+    return `<div class="sprint${isNow?' now':''}${open?' open':''}"><div class="sprint-head" data-t="${s.sprintIndex}"><div class="sh-left"><span class="sh-num">${s.sprintIndex}</span><span class="sh-range">${fmtBR(s.start)} – ${fmtBR(s.end)}</span>${badge}</div><div class="sh-right"><div class="sh-mini track"><div class="fill" style="width:${pct}%"></div></div><span class="sh-frac">${d}/${ids.length}</span><span class="chev">▸</span></div></div><div class="sprint-body"><p class="sprint-goal">${s.phaseTag} · ${s.phaseTitle}${s.phaseGoal?(' — '+s.phaseGoal):''}</p>${s.tasks.map(t=>taskRow(t.id,taskIndex[t.id])).join('')}</div></div>`;
+  }).join('');
+  el.querySelectorAll('.sprint-head').forEach(h=>h.addEventListener('click',e=>{if(e.target.closest('.checkbox')||e.target.closest('label')||e.target.closest('[data-del]'))return;const i=parseInt(h.dataset.t),card=h.closest('.sprint'),op=!card.classList.contains('open');card.classList.toggle('open',op);openSp[i]=op;}));
+  bindTasks(el);
+}
+
+/* ---- PERFIL ---- */
+function renderPerfil(){
+  document.getElementById('pfName').value=ME?.name||'';
+  document.getElementById('pfEmail').value=ME?.email||'';
+  document.getElementById('pfCourse').value=(PLAN&&PLAN.course)||ME?.course||'';
+  document.getElementById('pfXp').value=dailyGoal();
+}
+
+document.getElementById('pfSave').addEventListener('click', async ()=>{
+  try {
+    const name=document.getElementById('pfName').value.trim()||ME.name;
+    const course=document.getElementById('pfCourse').value.trim();
+    const dailyXp=parseInt(document.getElementById('pfXp').value)||40;
+
+    const updated=await authApi.updateProfile({
+      name,
+      course,
+      dailyXp,
+      role: ME.role
+    });
+
+    ME={...ME,...updated};
+    if(PLAN){
+      PLAN.course=course;
+      PLAN.dailyXpGoal=dailyXp;
+      store.set('plan',PLAN);
+    }
+
+    renderAll();
+    toast('Perfil salvo.');
+  } catch(e) {
+    console.error(e);
+    toast('Erro ao salvar: '+e.message);
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+  if(!confirm('Sair da conta?')) return;
+
+  try {
+    await authApi.logout();
+  } catch(e) {
+    console.error(e);
+  }
+
+  ME=null;
+  PLAN=null;
+  CLOUD_DATA={plan:null,status:{},log:{},scores:{}};
+  statusMap={};
+  completionLog={};
+  scoreLog={};
+  sprints=[];
+  taskIndex={};
+  wIdx=null;
+  openDays={};
+  openSp={};
+  document.getElementById('loginEmail').value='';
+  document.getElementById('loginPass').value='';
+  document.getElementById('signupView').classList.add('hidden');
+  document.getElementById('loginView').classList.remove('hidden');
+  showAuth();
+});
+
+/* ---- ADMIN ---- */
+async function renderAdmin(){
+  if(!ME || ME.role!=='admin') return;
+
+  const table=document.getElementById('usersTable');
+
+  // A listagem de todos os alunos exige uma policy de admin no Supabase.
+  // Para não expor usuários indevidamente, tentamos ler somente quando a policy permitir.
+  const { data, error } = await sb
+    .from('profiles')
+    .select('id,name,email,role,course,created_at')
+    .order('created_at', { ascending: true });
+
+  if(error){
+    table.innerHTML=`<tbody><tr><td colspan="4">
+      <div class="empty">Acesso administrativo ainda não liberado pelo RLS do Supabase.</div>
+      <div class="note">Configure uma policy segura para administradores antes de listar todos os alunos.</div>
+    </td></tr></tbody>`;
+    document.getElementById('reqText').value=REQ_REPORT;
+    return;
+  }
+
+  const rows=(data||[]).map(u=>`
+    <tr>
+      <td><b>${escapeHtml(u.name||'Sem nome')}</b><div style="font-size:10.5px;color:var(--ink-faint)">${escapeHtml(u.email||'')}</div></td>
+      <td><span class="role-badge role-${u.role||'student'}">${escapeHtml(u.role||'student')}</span></td>
+      <td style="text-align:center">—</td>
+      <td style="text-align:right;white-space:nowrap">${u.id===ME.id?'Sua conta':'Usuário Supabase'}</td>
+    </tr>`).join('');
+
+  table.innerHTML=`<thead><tr><th>Usuário</th><th>Papel</th><th style="text-align:center">Plano</th><th style="text-align:right">Status</th></tr></thead><tbody>${rows||'<tr><td colspan="4">Nenhum usuário.</td></tr>'}</tbody>`;
+  document.getElementById('reqText').value=REQ_REPORT;
+}
+
+function escapeHtml(value){
+  return String(value??'').replace(/[&<>"']/g,m=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+  }[m]));
+}
+
+/* ---- toast / xp / theme ---- */
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1700);}
+function xpPop(ev){const x=ev.clientX||innerWidth/2,y=ev.clientY||innerHeight/2;const el=document.createElement('div');el.className='xp-pop';el.textContent='+'+XP_PER_TASK+' XP';el.style.left=x+'px';el.style.top=y+'px';document.body.appendChild(el);setTimeout(()=>el.remove(),1000);}
+let theme=LS.get('rm-theme')||'light';document.body.setAttribute('data-theme',theme);
+document.getElementById('themeToggle').addEventListener('click',()=>{theme=theme==='dark'?'light':'dark';document.body.setAttribute('data-theme',theme);LS.set('rm-theme',theme);document.getElementById('themeToggle').textContent=theme==='dark'?'☀️':'🌙';});
+document.getElementById('themeToggle').textContent=theme==='dark'?'☀️':'🌙';
+document.getElementById('avatarBtn').addEventListener('click',()=>switchTab('perfil'));
+
+/* ---- IMPORT / EXPORT ---- */
+function loadPlanFromObj(obj){
+  if(!obj||typeof obj!=='object')throw new Error('JSON inválido.');
+  if(!obj.phases||!Array.isArray(obj.phases))throw new Error('O JSON precisa ter um array "phases".');
+  obj.customTasks=obj.customTasks||[];
+  PLAN=obj;store.set('plan',PLAN);buildFromPlan();
+  // reset ids that no longer exist
+  Object.keys(statusMap).forEach(id=>{if(!taskIndex[id])delete statusMap[id];});
+  Object.keys(completionLog).forEach(id=>{if(!taskIndex[id])delete completionLog[id];});
+  saveProgress();
+}
+function importText(txt){
+  try{const obj=JSON.parse(txt);loadPlanFromObj(obj);wIdx=null;renderAll();switchTab('dashboard');toast('Plano importado! 🎉');}
+  catch(e){toast('Erro: '+e.message);}
+}
+document.getElementById('importPasteBtn').addEventListener('click',()=>{const t=document.getElementById('planPaste').value.trim();if(!t){toast('Cole o JSON primeiro.');return;}importText(t);});
+document.getElementById('planFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>importText(r.result);r.readAsText(f);});
+document.getElementById('exportBtn').addEventListener('click',()=>{if(!PLAN){toast('Nada para exportar.');return;}const blob=new Blob([JSON.stringify(PLAN,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='meu-plano-rota-med.json';a.click();toast('Plano exportado.');});
+document.getElementById('modelBtn').addEventListener('click',()=>{document.getElementById('planPaste').value=JSON.stringify(MODEL_PLAN,null,2);toast('Modelo colado no campo. Edite e importe.');});
+document.getElementById('emptyImportBtn').addEventListener('click',()=>switchTab('perfil'));
+document.getElementById('copyReqBtn').addEventListener('click',()=>{navigator.clipboard?.writeText(REQ_REPORT).then(()=>toast('Roteiro copiado!'),()=>toast('Selecione e copie manualmente.'));});
+
+/* ============================ AUTH FLOW ============================ */
+function showAuth(){document.getElementById('authScreen').classList.remove('hidden');document.getElementById('app').classList.add('hidden');document.getElementById('botnav').classList.add('hidden');}
+function showApp(){document.getElementById('authScreen').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('botnav').classList.remove('hidden');}
+document.getElementById('toSignup').addEventListener('click',()=>{document.getElementById('loginView').classList.add('hidden');document.getElementById('signupView').classList.remove('hidden');});
+document.getElementById('toLogin').addEventListener('click',()=>{document.getElementById('signupView').classList.add('hidden');document.getElementById('loginView').classList.remove('hidden');});
+function authErr(el,m){const e=document.getElementById(el);e.textContent=m;e.classList.add('show');}
+document.getElementById('loginBtn').addEventListener('click',async()=>{
+  try{
+    document.getElementById('loginErr').classList.remove('show');
+    await authApi.login(
+      document.getElementById('loginEmail').value,
+      document.getElementById('loginPass').value
+    );
+    await enter();
+  }catch(e){
+    console.error(e);
+    authErr('loginErr',e.message||'Não foi possível entrar.');
+  }
+});
+
+document.getElementById('signupBtn').addEventListener('click',async()=>{
+  try{
+    document.getElementById('signupErr').classList.remove('show');
+    await authApi.signup(
+      document.getElementById('suName').value,
+      document.getElementById('suEmail').value,
+      document.getElementById('suPass').value
+    );
+    await enter();
+  }catch(e){
+    console.error(e);
+    authErr('signupErr',e.message||'Não foi possível criar a conta.');
+  }
+});
+
+[['loginPass','loginBtn'],['suPass','signupBtn']].forEach(([inp,btn])=>
+  document.getElementById(inp).addEventListener('keydown',e=>{
+    if(e.key==='Enter') document.getElementById(btn).click();
+  })
 );
 
-create table if not exists public.plans (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  plan jsonb,
-  status jsonb,
-  log jsonb,
-  scores jsonb,
-  updated_at timestamptz default now()
-);
+async function loadUserData(){
+  await cloudLoad();
 
-alter table public.profiles enable row level security;
-alter table public.plans enable row level security;
+  PLAN=CLOUD_DATA.plan;
+  statusMap=CLOUD_DATA.status||{};
+  completionLog=CLOUD_DATA.log||{};
+  scoreLog=CLOUD_DATA.scores||{};
 
-create policy "Users can read own profile"
-on public.profiles
-for select
-to authenticated
-using (auth.uid() = id);
+  buildFromPlan();
+}
 
-create policy "Users can insert own profile"
-on public.profiles
-for insert
-to authenticated
-with check (auth.uid() = id);
+function renderAll(){
+  renderHero();
+  renderDashboard();
+  renderMetas();
+  renderProgresso();
+  renderSemanal();
+  renderKanban();
+  renderSprints();
+  renderPerfil();
+  renderAdmin();
+}
 
-create policy "Users can update own profile"
-on public.profiles
-for update
-to authenticated
-using (auth.uid() = id)
-with check (auth.uid() = id);
+async function enter(){
+  const user=await authApi.current();
+  if(!user){
+    showAuth();
+    return;
+  }
 
-create policy "Users can manage own plan"
-on public.plans
-for all
-to authenticated
-using (auth.uid() = user_id)
-with check (auth.uid() = user_id);
+  const profile=await authApi.getProfile(user.id);
+
+  ME={
+    id:user.id,
+    name:profile.name || user.user_metadata?.name || user.email?.split('@')[0] || 'Aluno',
+    email:user.email || profile.email || '',
+    role:profile.role || 'student',
+    course:profile.course || '',
+    dailyXp:Number(profile.daily_xp)||40
+  };
+
+  await loadUserData();
+
+  renderTabs();
+  showApp();
+  renderAll();
+  switchTab('dashboard');
+}
+
+/* ============================ MODELO DE PLANO + ROTEIRO ============================ */
+const MODEL_PLAN={
+  student:"Nome do Aluno",
+  course:"Medicina - Instituição",
+  examDate:"2026-11-08",
+  goalAvg:780,
+  dailyXpGoal:40,
+  cutoffNote:"Observações sobre nota de corte, plano B (Fies/bolsa parcial), etc.",
+  scoreAreas:[
+    {key:"linguagens",name:"Linguagens",current:600,target:670},
+    {key:"humanas",name:"Ciências Humanas",current:640,target:690},
+    {key:"natureza",name:"Ciências da Natureza",current:540,target:710},
+    {key:"matematica",name:"Matemática",current:700,target:850},
+    {key:"redacao",name:"Redação",current:760,target:940}
+  ],
+  phases:[
+    {id:"f1",tag:"Fase 1",title:"Fundação",goal:"Diagnóstico e base.",weeks:[
+      {start:"2026-08-05",end:"2026-08-09",tasks:[["fisica","Iniciar Cinemática"],["quimica","Revisar solubilidade"],["matematica","Aula semanal"],["redacao","1 redação"]]}
+    ]}
+  ],
+  customTasks:[]
+};
+
+const REQ_REPORT=`ROTEIRO DE REQUISIÇÃO — PLANO DE ESTUDOS ENEM (Rota Medicina)
+Responda o máximo que puder. Com isto, geramos seu plano em JSON para importar no app.
+
+1) DADOS GERAIS
+- Nome:
+- Curso e instituição alvo:
+- Ampla concorrência ou cota (qual)?
+- Renda per capita se encaixa em Prouni/Fies? (sim/não)
+- Data da prova (confirmada na Página do Participante):
+
+2) HISTÓRICO DE NOTAS (últimos ENEMs, por área)
+- Linguagens / Humanas / Natureza / Matemática / Redação:
+- Nota de corte alvo do curso (ano anterior serve):
+
+3) DIAGNÓSTICO POR ÁREA
+- Área que MAIS trava:
+- Em Natureza: como está Física, Química (quais tópicos) e Biologia?
+- Matemática: nível atual e meta:
+- Redação: nota usual, modelo que usa, dificuldades atuais:
+- Linguagens/Humanas: estuda por teoria ou por prova?
+
+4) ROTINA
+- Horas/semana realistas de estudo:
+- Trabalha/estuda em paralelo? Horário fixo ou flexível?
+- Dias livres (fim de semana):
+- Materiais/plataformas que já usa:
+
+5) META
+- Prioridade (bolsa integral, parcial, Fies, aprovação simples):
+- Plano B aceito:
+
+6) OBSERVAÇÕES DE CUIDADO
+- Algo sobre ansiedade, saúde ou logística da prova a considerar:
+
+>> SAÍDA ESPERADA DA CLAUDE: um JSON seguindo o schema do Rota Medicina
+   (student, course, examDate, goalAvg, dailyXpGoal, cutoffNote,
+    scoreAreas[], phases[ {id,tag,title,goal,weeks[ {start,end,tasks[[area,texto]]} ]} ]).
+   Áreas válidas p/ "area": fisica, quimica, biologia, matematica, redacao,
+   linguagens, simulado, rotina, outro.`;
+
+/* ============================ BOOT ============================ */
+(async function boot(){
+  try{
+    const cur=await authApi.current();
+    if(cur){
+      await enter();
+    }else{
+      showAuth();
+    }
+  }catch(e){
+    console.error('Boot error:',e);
+    showAuth();
+  }
+})();
+
+</script>
+</body>
+</html>
