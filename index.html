@@ -445,8 +445,8 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
    4) A camada de dados abaixo (store/authApi) já isola tudo. As funções
       cloud* mostram exatamente onde plugar as chamadas do Supabase.
    ============================================================================ */
-const SUPABASE_URL = '';
-const SUPABASE_ANON_KEY = '';
+const SUPABASE_URL = 'https://qcszgshitvsohjgzyhqn.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_2tnpJZ4sKNR_qfpNDEA7BA_Y468229R';
 const CLOUD = !!(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase);
 let sb = null;
 if (CLOUD) { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
