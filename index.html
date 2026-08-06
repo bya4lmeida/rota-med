@@ -555,8 +555,7 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
   </section>
 
   <section class="panel" data-panel="sprints">
-    <div class="card"><div class="card-h"><span class="eyebrow">Sua trilha</span><h2>Jornada até a prova</h2></div><div class="journey" id="journey"></div></div>
-    <div id="sprintsList"></div>
+    <div class="card"><div class="card-h"><span class="eyebrow">Sua trilha</span><h2>Jornada até a prova</h2></div><p style="font-size:12px;color:var(--ink-soft);margin:-4px 0 14px;">Toque em um sprint para ver e marcar as tarefas.</p><div class="journey" id="journey"></div></div>
   </section>
 
   <section class="panel" data-panel="estudo">
@@ -1152,6 +1151,7 @@ function drawKanban(){
 }
 
 /* ---- JORNADA (trilha) ---- */
+let openJrn={};
 function renderJourney(){
   const el=document.getElementById('journey'); if(!el) return;
   if(!sprints.length){el.innerHTML='<div class="empty">Importe um plano para ver sua jornada.</div>';return;}
@@ -1168,17 +1168,24 @@ function renderJourney(){
       const isNow=cs&&s.sprintIndex===cs.sprintIndex;
       const done=pct===100;
       const state=isNow?'now':done?'done':'';
+      const open=openJrn[s.sprintIndex]||false;
       const here=isNow?'<span class="jrn-here">Você está aqui</span>':'';
-      return `<div class="jrn-node ${state}">
+      const tasksHtml=open?`<div class="jrn-tasks">${s.tasks.length?s.tasks.map(t=>taskRow(t.id,taskIndex[t.id])).join(''):'<div class="empty" style="padding:8px 0;">Sem tarefas neste sprint.</div>'}</div>`:'';
+      return `<div class="jrn-node ${state}${open?' open':''}" data-sp="${s.sprintIndex}">
         <span class="jrn-bead">${done?'✓':s.sprintIndex}</span>
         <div class="jrn-card">
-          <div class="jc-top"><div><div class="jc-range">${fmtBR(s.start)} – ${fmtBR(s.end)}</div><div class="jc-sub">${d}/${ids.length} tarefas · ${pct}%</div></div>${here}</div>
-          <div class="jrn-mini"><div class="fill" style="width:${pct}%"></div></div>
+          <div class="jc-head" data-jsp="${s.sprintIndex}">
+            <div class="jc-top"><div><div class="jc-range">${fmtBR(s.start)} – ${fmtBR(s.end)}</div><div class="jc-sub">${d}/${ids.length} tarefas · ${pct}%</div></div><div style="display:flex;align-items:center;gap:8px;">${here}<span class="chev">▸</span></div></div>
+            <div class="jrn-mini"><div class="fill" style="width:${pct}%"></div></div>
+          </div>
+          ${tasksHtml}
         </div>
       </div>`;
     }).join('');
     return `<div class="jrn-phase"><div class="jrn-phase-h"><span class="jrn-phase-tag">${ph.tag}</span><span class="jrn-phase-title">${ph.title}</span></div><div class="jrn-track">${nodes}</div></div>`;
   }).join('');
+  el.querySelectorAll('.jc-head').forEach(h=>h.addEventListener('click',()=>{const i=parseInt(h.dataset.jsp);openJrn[i]=!openJrn[i];renderJourney();}));
+  bindTasks(el);
 }
 
 /* ---- SPRINTS ---- */
@@ -1486,7 +1493,6 @@ function renderAll(){
   renderSemanal();
   renderKanban();
   renderJourney();
-  renderSprints();
   renderEstudo();
   renderPerfil();
   renderAdmin();
