@@ -437,7 +437,29 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
 .stud-summary{display:flex;gap:16px;flex-wrap:wrap;align-items:center;}
 .stud-summary .ss-item{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;}
 .stud-summary .ss-item b{font-size:16px;font-weight:800;letter-spacing:-.02em;}
-.stud-summary .ss-ic{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;font-size:15px;}
+.stud-summary .ss-lab{font-size:11px;color:var(--ink-faint);font-weight:600;}
+.stud-summary .ss-ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:15px;}
+
+/* -- tiles em vidro (transparência intencional, agora sem vazamento) -- */
+[data-theme="dark"] .tile{background:rgba(42,35,78,.5)!important;border-color:rgba(160,140,255,.2);box-shadow:0 4px 16px rgba(0,0,0,.22);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);}
+[data-theme="light"] .tile{background:rgba(255,255,255,.52)!important;border-color:rgba(120,110,160,.22);box-shadow:0 4px 14px rgba(80,60,160,.06);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);}
+
+/* -- POMODORO FLUTUANTE -- */
+.pomo-fab{position:fixed;right:20px;bottom:20px;z-index:55;display:flex;align-items:center;gap:11px;padding:10px 14px 12px;border-radius:100px;background:var(--panel-solid);border:1px solid var(--glass-border);box-shadow:var(--shadow-lg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);overflow:hidden;}
+.pf-btn{width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;color:#fff;font-size:13px;display:grid;place-items:center;background:linear-gradient(135deg,var(--grad-a),var(--grad-c));box-shadow:0 4px 12px rgba(124,92,255,.35);flex-shrink:0;}
+.pf-btn:active{transform:scale(.94);}
+.pf-info{min-width:64px;}
+.pf-time{font-size:18px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1;}
+.pf-sub{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);margin-top:3px;}
+.pf-presets{display:flex;gap:4px;}
+.pf-presets button{font-size:11px;font-weight:700;border:1px solid var(--line);background:transparent;color:var(--ink-soft);border-radius:100px;padding:5px 9px;cursor:pointer;}
+.pf-presets button.active{background:var(--violet-weak);color:var(--violet);border-color:transparent;}
+.pomo-fab.running .pf-presets{display:none;}
+.pf-reset{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--ink-soft);cursor:pointer;font-size:14px;flex-shrink:0;}
+.pf-reset:hover{color:var(--violet);border-color:var(--violet);}
+.pf-prog{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--line);}
+.pf-prog-fill{height:100%;width:0;background:linear-gradient(90deg,var(--grad-a),var(--grad-c));transition:width .3s linear;}
+@media(max-width:720px){.pomo-fab{right:12px;bottom:calc(84px + env(safe-area-inset-bottom));padding:8px 12px 10px;gap:9px;}.pf-presets{display:none;}.pomo-fab.running .pf-presets{display:none;}}
 </style>
 </head>
 <body data-theme="light">
@@ -490,7 +512,7 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
         <button class="avatar-btn lg" id="avatarBtn" title="Perfil">B</button>
         <div class="su-meta"><div class="su-name" id="sbName">—</div><div class="su-mail" id="sbMail">—</div></div>
       </div>
-      <div style="font-size:9.5px;color:var(--ink-faint);font-weight:700;letter-spacing:.06em;text-align:center;opacity:.8;">layout v2.2 · estudo</div>
+      <div style="font-size:9.5px;color:var(--ink-faint);font-weight:700;letter-spacing:.06em;text-align:center;opacity:.8;">layout v2.3 · pomodoro</div>
     </div>
   </aside>
   <div class="main">
@@ -559,42 +581,24 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
   </section>
 
   <section class="panel" data-panel="estudo">
-    <div class="grid g-2">
-      <div class="card">
-        <div class="card-h"><span class="eyebrow">Foco</span><h2>Pomodoro</h2></div>
-        <div class="pomo">
-          <div class="pomo-ring">
-            <svg width="160" height="160" viewBox="0 0 160 160"><circle cx="80" cy="80" r="70" fill="none" stroke="var(--line)" stroke-width="10"/><circle id="pomoRing" cx="80" cy="80" r="70" fill="none" stroke="url(#gr)" stroke-width="10" stroke-linecap="round" stroke-dasharray="440" stroke-dashoffset="0" transform="rotate(-90 80 80)"/></svg>
-            <div class="pomo-center"><div class="pomo-time" id="pomoTime">25:00</div><div class="pomo-state" id="pomoState">Pronto</div></div>
-          </div>
-          <div class="pomo-presets" id="pomoPresets">
-            <button class="pomo-preset active" data-min="25">25</button>
-            <button class="pomo-preset" data-min="50">50</button>
-            <button class="pomo-preset" data-min="15">15</button>
-          </div>
-          <div class="pomo-actions">
-            <button class="btn-primary" id="pomoStart" style="max-width:150px;">Iniciar</button>
-            <button class="btn-line" id="pomoReset">Zerar</button>
-          </div>
-        </div>
+    <div class="card">
+      <div class="card-h"><span class="eyebrow">Constância</span><h2>Horas de estudo</h2></div>
+      <div class="grid g-3" style="gap:12px;">
+        <div class="tile"><div class="ic ic-violet">⏱️</div><div class="k">Hoje</div><div class="v" id="stHoje">0m</div><div class="s" id="stHojeSess">0 sessões</div></div>
+        <div class="tile"><div class="ic ic-orange">📆</div><div class="k">Esta semana</div><div class="v" id="stSemana">0h</div><div class="s" id="stSemanaSess">0 sessões</div></div>
+        <div class="tile"><div class="ic ic-green">🏔️</div><div class="k">Total acumulado</div><div class="v" id="stTotal">0h</div><div class="s" id="stTotalSess">0 sessões</div></div>
       </div>
-      <div class="card">
-        <div class="card-h"><span class="eyebrow">Constância</span><h2>Horas estudadas</h2></div>
-        <div class="grid g-2" style="gap:12px;">
-          <div class="tile"><div class="ic ic-violet">⏱️</div><div class="k">Hoje</div><div class="v" id="stHoje">0h 0m</div><div class="s" id="stHojeSess">0 sessões</div></div>
-          <div class="tile"><div class="ic ic-orange">📆</div><div class="k">Esta semana</div><div class="v" id="stSemana">0h</div><div class="s" id="stSemanaSess">0 sessões</div></div>
-        </div>
-        <div class="field" style="margin-top:14px;"><label>Adicionar minutos manualmente</label>
-          <div style="display:flex;gap:8px;"><input type="number" id="stManual" min="1" placeholder="ex: 40" style="flex:1;font-size:14px;border:1px solid var(--line);border-radius:12px;padding:11px 14px;background:var(--panel-solid);color:var(--ink);"><button class="mini-add" id="stManualAdd" style="padding:0 16px;">+ Add</button></div>
-        </div>
+      <div class="field" style="margin-top:16px;max-width:360px;"><label>Adicionar minutos manualmente</label>
+        <div style="display:flex;gap:8px;"><input type="number" id="stManual" min="1" placeholder="ex: 40" style="flex:1;font-size:14px;border:1px solid var(--line);border-radius:12px;padding:11px 14px;background:var(--panel-solid);color:var(--ink);"><button class="mini-add" id="stManualAdd" style="padding:0 16px;">+ Add</button></div>
       </div>
+      <div class="note" style="margin-top:14px;">Use o <b>Pomodoro</b> no canto inferior pra cronometrar em qualquer aba — cada ciclo concluído soma os minutos aqui automaticamente.</div>
     </div>
     <div class="card">
       <div class="card-h"><span class="eyebrow">Desempenho</span><h2>Questões resolvidas</h2></div>
       <div class="grid g-3" style="gap:12px;">
         <div class="tile"><div class="ic ic-green">🎯</div><div class="k">Total resolvidas</div><div class="v" id="qTotal">0</div><div class="s" id="qSess">0 registros</div></div>
         <div class="tile"><div class="ic ic-violet">✅</div><div class="k">Acertos</div><div class="v" id="qCorrect">0</div><div class="s">acumulado</div></div>
-        <div class="tile"><div class="ic ic-orange">📊</div><div class="k">Taxa de acerto</div><div class="v" id="qAcc">–</div><div class="s" id="qAccBar">meta 70%+</div></div>
+        <div class="tile"><div class="ic ic-orange">📊</div><div class="k">Taxa de acerto</div><div class="v" id="qAcc">–</div><div class="s">meta 70%+</div></div>
       </div>
       <div class="qform">
         <div class="field" style="flex:1;min-width:120px;"><label>Resolvidas</label><input type="number" id="qIn" min="1" placeholder="ex: 30"></div>
@@ -639,6 +643,14 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
 </div>
 
 <nav class="botnav hidden" id="botnav"></nav>
+
+<div class="pomo-fab hidden" id="pomoFab">
+  <button class="pf-btn" id="pfToggle" aria-label="Iniciar ou pausar">▶</button>
+  <div class="pf-info"><div class="pf-time" id="pfTime">25:00</div><div class="pf-sub" id="pfSub">Pomodoro</div></div>
+  <div class="pf-presets" id="pfPresets"><button data-min="25" class="active">25</button><button data-min="50">50</button><button data-min="15">15</button></div>
+  <button class="pf-reset" id="pfReset" aria-label="Zerar" title="Zerar">↺</button>
+  <div class="pf-prog"><div class="pf-prog-fill" id="pfProg"></div></div>
+</div>
 
 <div class="modal-ov" id="dayModal">
   <div class="modal">
@@ -1226,48 +1238,84 @@ function studyWeek(){
   Object.entries(EXTRAS.study).forEach(([iso,v])=>{const d=new Date(iso+'T12:00:00');if(d>=mon){min+=v.min||0;sess+=v.sess||0;}});
   return {min,sess};
 }
+function studyTotal(){let min=0,sess=0;Object.values(EXTRAS.study).forEach(v=>{min+=v.min||0;sess+=v.sess||0;});return {min,sess};}
 function fmtHM(min){const h=Math.floor(min/60),m=Math.round(min%60);return h?`${h}h ${m}m`:`${m}m`;}
 function fmtH(min){const v=(min/60);return (Number.isInteger(v)?v:v.toFixed(1))+'h';}
 function qTotals(){let total=0,correct=0;EXTRAS.questions.forEach(q=>{total+=q.total||0;correct+=q.correct||0;});return {total,correct,acc:total?Math.round(correct/total*100):null};}
 
-/* ---- POMODORO ---- */
-let pomoMin=25, pomoLeft=25*60, pomoTimer=null, pomoRunning=false;
+/* ---- POMODORO FLUTUANTE (global, todas as abas) + som suave ---- */
+let pomoMin=25, pomoLeft=25*60, pomoTimer=null, pomoRunning=false, audioCtx=null;
 function pomoFmt(s){const m=Math.floor(s/60),sec=s%60;return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;}
-function pomoRingSet(){const c=2*Math.PI*70;const elapsed=1-(pomoLeft/(pomoMin*60));const r=document.getElementById('pomoRing');if(r)r.style.strokeDashoffset=String(c*elapsed);}
-function pomoRender(){const t=document.getElementById('pomoTime');if(t)t.textContent=pomoFmt(pomoLeft);pomoRingSet();}
-function pomoSet(min){pomoMin=min;pomoLeft=min*60;pomoRunning=false;clearInterval(pomoTimer);const s=document.getElementById('pomoState');if(s)s.textContent='Pronto';const b=document.getElementById('pomoStart');if(b)b.textContent='Iniciar';pomoRender();}
+function chime(){
+  try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended')audioCtx.resume();
+    const now=audioCtx.currentTime;
+    [659.25,880,1174.66].forEach((f,i)=>{ // E5 · A5 · D6 — arpejo suave
+      const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.type='sine';o.frequency.value=f;o.connect(g);g.connect(audioCtx.destination);
+      const t=now+i*0.16;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(0.12,t+0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.6);
+      o.start(t);o.stop(t+0.65);
+    });
+  }catch(e){}
+}
+function pomoRender(){
+  const t=document.getElementById('pfTime'); if(t)t.textContent=pomoFmt(pomoLeft);
+  const p=document.getElementById('pfProg'); if(p)p.style.width=(100*(1-pomoLeft/(pomoMin*60)))+'%';
+}
+function pomoSetSub(txt){const s=document.getElementById('pfSub');if(s)s.textContent=txt;}
+function pomoSetBtn(txt){const b=document.getElementById('pfToggle');if(b)b.textContent=txt;}
+function pomoSet(min){
+  pomoMin=min;pomoLeft=min*60;pomoRunning=false;clearInterval(pomoTimer);
+  document.getElementById('pomoFab')?.classList.remove('running');
+  pomoSetSub('Pomodoro');pomoSetBtn('▶');pomoRender();
+}
 function pomoTick(){
   pomoLeft--;
   if(pomoLeft<=0){
     clearInterval(pomoTimer);pomoRunning=false;pomoLeft=0;pomoRender();
+    document.getElementById('pomoFab')?.classList.remove('running');
     logStudyMinutes(pomoMin);
-    document.getElementById('pomoState').textContent='Concluído';
-    document.getElementById('pomoStart').textContent='Iniciar';
-    toast('Sessão concluída! +'+pomoMin+' min de foco 🎯');
+    chime();
+    pomoSetSub('Concluído');pomoSetBtn('▶');
+    toast('Ciclo concluído! +'+pomoMin+' min de foco 🎯');
     renderEstudo();renderStudSummary();
-    setTimeout(()=>pomoSet(pomoMin),1400);
+    setTimeout(()=>pomoSet(pomoMin),1600);
     return;
   }
   pomoRender();
 }
 function pomoToggle(){
-  if(pomoRunning){clearInterval(pomoTimer);pomoRunning=false;document.getElementById('pomoStart').textContent='Continuar';document.getElementById('pomoState').textContent='Pausado';}
-  else{pomoRunning=true;document.getElementById('pomoStart').textContent='Pausar';document.getElementById('pomoState').textContent='Focando';pomoTimer=setInterval(pomoTick,1000);}
+  if(pomoRunning){
+    clearInterval(pomoTimer);pomoRunning=false;
+    document.getElementById('pomoFab')?.classList.remove('running');
+    pomoSetBtn('▶');pomoSetSub('Pausado');
+  }else{
+    try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(e){}
+    pomoRunning=true;
+    document.getElementById('pomoFab')?.classList.add('running');
+    pomoSetBtn('❚❚');pomoSetSub('Focando');
+    pomoTimer=setInterval(pomoTick,1000);
+  }
 }
 
 function renderStudSummary(){
   const el=document.getElementById('studSummary'); if(!el)return;
-  const st=studyToday(), q=qTotals();
+  const st=studyToday(), tot=studyTotal(), q=qTotals();
   el.innerHTML=`
-    <div class="ss-item"><span class="ss-ic ic-violet">⏱️</span><span><b>${fmtHM(st.min)}</b><br><span style="font-size:11px;color:var(--ink-faint)">estudadas hoje</span></span></div>
-    <div class="ss-item"><span class="ss-ic ic-green">🎯</span><span><b>${q.total}</b><br><span style="font-size:11px;color:var(--ink-faint)">questões no total</span></span></div>
-    <div class="ss-item"><span class="ss-ic ic-orange">📊</span><span><b>${q.acc!==null?q.acc+'%':'–'}</b><br><span style="font-size:11px;color:var(--ink-faint)">de acerto</span></span></div>`;
+    <div class="ss-item"><span class="ss-ic ic-violet">⏱️</span><span><b>${fmtHM(st.min)}</b><br><span class="ss-lab">hoje</span></span></div>
+    <div class="ss-item"><span class="ss-ic ic-green">🏔️</span><span><b>${fmtH(tot.min)}</b><br><span class="ss-lab">acumuladas</span></span></div>
+    <div class="ss-item"><span class="ss-ic ic-orange">🎯</span><span><b>${q.total}</b><br><span class="ss-lab">questões</span></span></div>
+    <div class="ss-item"><span class="ss-ic ic-pink">📊</span><span><b>${q.acc!==null?q.acc+'%':'–'}</b><br><span class="ss-lab">rendimento</span></span></div>`;
 }
 
 function renderEstudo(){
-  pomoRender();
   const st=studyToday(); const sh=document.getElementById('stHoje'); if(sh){sh.textContent=fmtHM(st.min);document.getElementById('stHojeSess').textContent=st.sess+' sessões';}
   const sw=studyWeek(); const ss=document.getElementById('stSemana'); if(ss){ss.textContent=fmtH(sw.min);document.getElementById('stSemanaSess').textContent=sw.sess+' sessões';}
+  const tt=studyTotal(); const stt=document.getElementById('stTotal'); if(stt){stt.textContent=fmtH(tt.min);document.getElementById('stTotalSess').textContent=tt.sess+' sessões';}
   const q=qTotals(); const qt=document.getElementById('qTotal');
   if(qt){qt.textContent=q.total;document.getElementById('qCorrect').textContent=q.correct;document.getElementById('qAcc').textContent=q.acc!==null?q.acc+'%':'–';document.getElementById('qSess').textContent=EXTRAS.questions.length+' registros';}
   const qa=document.getElementById('qArea'); if(qa && !qa.dataset.f){qa.innerHTML=Object.keys(AREA_LABELS).map(a=>`<option value="${a}">${AREA_LABELS[a]}</option>`).join('');qa.value='natureza';qa.dataset.f='1';}
@@ -1275,11 +1323,11 @@ function renderEstudo(){
   if(hist)hist.innerHTML=EXTRAS.questions.slice(-6).reverse().map(x=>{const acc=x.total?Math.round(x.correct/x.total*100):0;const col=acc>=70?'var(--green)':acc>=50?'var(--amber)':'var(--red)';return `<div class="qrow"><span><span class="chip chip-${x.area||'outro'}">${AREA_LABELS[x.area]||'Geral'}</span> ${x.correct}/${x.total} <span class="qr-date">· ${fmtBR(x.date)}</span></span><span class="qr-acc" style="color:${col}">${acc}%</span></div>`;}).join('')||'<div class="empty" style="padding:8px 0;">Nenhum registro ainda. Some questões pra ver sua taxa de acerto evoluir.</div>';
 }
 
-/* bindings estáticos do painel Estudo (elementos fixos no HTML) */
-document.getElementById('pomoStart')?.addEventListener('click',pomoToggle);
-document.getElementById('pomoReset')?.addEventListener('click',()=>pomoSet(pomoMin));
-document.querySelectorAll('#pomoPresets .pomo-preset').forEach(b=>b.addEventListener('click',()=>{
-  document.querySelectorAll('#pomoPresets .pomo-preset').forEach(x=>x.classList.remove('active'));
+/* bindings do Pomodoro flutuante + Estudo */
+document.getElementById('pfToggle')?.addEventListener('click',pomoToggle);
+document.getElementById('pfReset')?.addEventListener('click',()=>pomoSet(pomoMin));
+document.querySelectorAll('#pfPresets button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#pfPresets button').forEach(x=>x.classList.remove('active'));
   b.classList.add('active'); pomoSet(parseInt(b.dataset.min));
 }));
 document.getElementById('stManualAdd')?.addEventListener('click',()=>{
@@ -1433,8 +1481,8 @@ document.getElementById('emptyImportBtn').addEventListener('click',()=>switchTab
 document.getElementById('copyReqBtn').addEventListener('click',()=>{navigator.clipboard?.writeText(REQ_REPORT).then(()=>toast('Roteiro copiado!'),()=>toast('Selecione e copie manualmente.'));});
 
 /* ============================ AUTH FLOW ============================ */
-function showAuth(){document.getElementById('authScreen').classList.remove('hidden');document.getElementById('authBg').classList.remove('hidden');document.getElementById('app').classList.add('hidden');document.getElementById('botnav').classList.add('hidden');}
-function showApp(){document.getElementById('authScreen').classList.add('hidden');document.getElementById('authBg').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('botnav').classList.remove('hidden');}
+function showAuth(){document.getElementById('authScreen').classList.remove('hidden');document.getElementById('authBg').classList.remove('hidden');document.getElementById('app').classList.add('hidden');document.getElementById('botnav').classList.add('hidden');document.getElementById('pomoFab').classList.add('hidden');}
+function showApp(){document.getElementById('authScreen').classList.add('hidden');document.getElementById('authBg').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('botnav').classList.remove('hidden');document.getElementById('pomoFab').classList.remove('hidden');pomoRender();}
 document.getElementById('toSignup').addEventListener('click',()=>{document.getElementById('loginView').classList.add('hidden');document.getElementById('signupView').classList.remove('hidden');});
 document.getElementById('toLogin').addEventListener('click',()=>{document.getElementById('signupView').classList.add('hidden');document.getElementById('loginView').classList.remove('hidden');});
 function authErr(el,m){const e=document.getElementById(el);e.textContent=m;e.classList.add('show');}
@@ -1588,7 +1636,7 @@ Responda o máximo que puder. Com isto, geramos seu plano em JSON para importar 
    linguagens, simulado, rotina, outro.`;
 
 /* ============================ BOOT ============================ */
-console.log('%cRota Med · layout v2.2 (opacidade + estudo)','color:#7C5CFF;font-weight:700;font-size:13px');
+console.log('%cRota Med · layout v2.3 (pomodoro flutuante + estudo)','color:#7C5CFF;font-weight:700;font-size:13px');
 (async function boot(){
   try{
     const cur=await authApi.current();
