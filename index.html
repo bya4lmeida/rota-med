@@ -382,6 +382,20 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
   .appbar{padding:18px 0 6px;}
   .mob-logo{display:flex;margin-right:auto;}
 }
+
+/* =====================================================================
+   v2.1 — separação/contraste dos tiles + respiro entre linhas
+   ===================================================================== */
+#dashHasPlan > .grid{margin-bottom:16px;}
+#dashHasPlan > .grid:last-child{margin-bottom:0;}
+
+.tile{border-radius:16px;border:1px solid var(--line);box-shadow:0 3px 12px rgba(80,60,160,.06);}
+.tile .k{color:var(--ink-soft);}
+[data-theme="light"] .tile{background:#fff;border-color:rgba(120,110,160,.18);box-shadow:0 4px 14px rgba(80,60,160,.07);}
+[data-theme="dark"] .tile{background:#221C40;border-color:rgba(160,140,255,.22);box-shadow:0 4px 16px rgba(0,0,0,.34);}
+
+[data-theme="dark"] .card{background:rgba(34,28,62,.84);}
+[data-theme="light"] .card{background:rgba(255,255,255,.88);}
 </style>
 </head>
 <body data-theme="light">
