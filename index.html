@@ -1010,7 +1010,7 @@ function bindTasks(scope){
 }
 
 function renderHero(){
-  document.getElementById('heroHi').textContent=`Olá, ${ME.name.split(' ')[0]}`;
+  document.getElementById('heroHi').textContent=`Olá, Dr. ${ME.name.split(' ')[0]} 🩺`;
   document.getElementById('heroSub').textContent=PLAN?(PLAN.course||'Bora estudar.'):'Importe seu plano para começar.';
   const ed=examDate(); const days=ed?Math.max(0,Math.ceil((ed-new Date())/86400000)):'–';
   document.getElementById('heroChips').innerHTML=
@@ -1402,7 +1402,7 @@ document.getElementById('qAdd')?.addEventListener('click',()=>{
 function applyAvatar(){
   const av=EXTRAS&&EXTRAS.avatar;
   const letter=(ME.name&&ME.name[0]||'?').toUpperCase();
-  [document.getElementById('avatarBtn'),document.getElementById('pfAvatar')].forEach(el=>{
+  [document.getElementById('avatarBtn'),document.getElementById('pfAvatar'),document.getElementById('heroAvatar')].forEach(el=>{
     if(!el)return;
     if(av){el.style.backgroundImage=`url(${av})`;el.textContent='';}
     else{el.style.backgroundImage='';el.textContent=letter;}
