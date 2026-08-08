@@ -92,19 +92,19 @@ svg{display:block;}
 
 /* ============ APP SHELL — header no topo ============ */
 .app-shell{min-height:100vh;}
-.appheader{position:sticky;top:0;z-index:50;height:var(--header-h);display:flex;align-items:center;gap:16px;padding:0 20px;background:var(--bg);border-bottom:1px solid var(--line);}
-.ah-logo{display:flex;align-items:center;gap:9px;flex-shrink:0;}
+.appheader{position:sticky;top:0;z-index:50;height:var(--header-h);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 20px;background:var(--bg);border-bottom:1px solid var(--line);}
+.ah-logo{display:flex;align-items:center;gap:9px;justify-self:start;flex-shrink:0;}
 .logo-mark.sm{width:34px;height:34px;font-size:15px;border-radius:10px;}
 .logo-txt .t1{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);font-weight:700;}
 .logo-txt .t2{font-size:14px;font-weight:800;letter-spacing:-.02em;line-height:1.05;}
 .logo-txt .t2 span{color:var(--accent);}
-.ah-nav{display:flex;gap:1px;flex:1;overflow-x:auto;scrollbar-width:none;}
+.ah-nav{display:flex;align-items:center;justify-content:center;gap:1px;min-width:0;overflow-x:auto;scrollbar-width:none;}
 .ah-nav::-webkit-scrollbar{display:none;}
 .ah-item{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:9px;font-size:13px;font-weight:600;color:var(--ink-soft);border:none;background:transparent;cursor:pointer;white-space:nowrap;transition:background .14s,color .14s;}
 .ah-item:hover{background:var(--surface-2);color:var(--ink);}
 .ah-item.active{background:var(--accent-weak);color:var(--accent);}
 .ah-item .ic-svg{width:16px;height:16px;}
-.ah-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;}
+.ah-right{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-left:0;flex-shrink:0;}
 .icon-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;display:grid;place-items:center;color:var(--ink-soft);transition:color .14s,border-color .14s;}
 .icon-btn:hover{color:var(--ink);}
 .ah-avatar{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);cursor:pointer;background-size:cover;background-position:center;display:grid;place-items:center;color:#fff;font-weight:800;font-size:14px;background-color:var(--accent);overflow:hidden;}
