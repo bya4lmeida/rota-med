@@ -92,19 +92,19 @@ svg{display:block;}
 
 /* ============ APP SHELL — header no topo ============ */
 .app-shell{min-height:100vh;}
-.appheader{position:sticky;top:0;z-index:50;height:var(--header-h);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 20px;background:var(--bg);border-bottom:1px solid var(--line);}
-.ah-logo{display:flex;align-items:center;gap:9px;justify-self:start;flex-shrink:0;}
+.appheader{position:sticky;top:0;z-index:50;height:var(--header-h);display:flex;align-items:center;gap:16px;padding:0 20px;background:var(--bg);border-bottom:1px solid var(--line);}
+.ah-logo{display:flex;align-items:center;gap:9px;flex-shrink:0;}
 .logo-mark.sm{width:34px;height:34px;font-size:15px;border-radius:10px;}
 .logo-txt .t1{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);font-weight:700;}
 .logo-txt .t2{font-size:14px;font-weight:800;letter-spacing:-.02em;line-height:1.05;}
 .logo-txt .t2 span{color:var(--accent);}
-.ah-nav{display:flex;align-items:center;justify-content:center;gap:1px;min-width:0;overflow-x:auto;scrollbar-width:none;}
+.ah-nav{display:flex;gap:1px;flex:1;overflow-x:auto;scrollbar-width:none;}
 .ah-nav::-webkit-scrollbar{display:none;}
 .ah-item{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:9px;font-size:13px;font-weight:600;color:var(--ink-soft);border:none;background:transparent;cursor:pointer;white-space:nowrap;transition:background .14s,color .14s;}
 .ah-item:hover{background:var(--surface-2);color:var(--ink);}
 .ah-item.active{background:var(--accent-weak);color:var(--accent);}
 .ah-item .ic-svg{width:16px;height:16px;}
-.ah-right{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-left:0;flex-shrink:0;}
+.ah-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;}
 .icon-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;display:grid;place-items:center;color:var(--ink-soft);transition:color .14s,border-color .14s;}
 .icon-btn:hover{color:var(--ink);}
 .ah-avatar{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);cursor:pointer;background-size:cover;background-position:center;display:grid;place-items:center;color:#fff;font-weight:800;font-size:14px;background-color:var(--accent);overflow:hidden;}
@@ -617,9 +617,9 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
     <div class="card"><div class="card-h"><span class="eyebrow">Plano de estudos</span><h2>Importar / Exportar</h2></div>
       <p style="font-size:13px;color:var(--ink-soft);margin-top:0;">Cole o JSON gerado pela Claude ou selecione um arquivo <b>.json</b>. Você também pode exportar seu plano atual como backup.</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-        <label class="btn-line" style="cursor:pointer;">📁 Selecionar arquivo<input type="file" id="planFile" accept=".json,application/json" class="hidden"></label>
-        <button class="btn-line" id="exportBtn">⬇️ Exportar meu plano</button>
-        <button class="btn-line" id="modelBtn">📄 Ver modelo de JSON</button>
+        <label class="btn-line" style="cursor:pointer;">Selecionar arquivo<input type="file" id="planFile" accept=".json,application/json" class="hidden"></label>
+        <button class="btn-line" id="exportBtn">Exportar meu plano</button>
+        <button class="btn-line" id="modelBtn">Ver modelo de JSON</button>
       </div>
       <textarea class="code" id="planPaste" placeholder="Cole aqui o JSON do plano..."></textarea>
       <div style="margin-top:10px;"><button class="btn-primary" style="max-width:220px;" id="importPasteBtn">Importar do texto</button></div>
@@ -629,7 +629,7 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
 
   <section class="panel" data-panel="admin">
     <div class="card"><div class="card-h"><span class="eyebrow">Administração</span><h2>Gerenciar acessos</h2></div><div style="overflow-x:auto;"><table class="utable" id="usersTable"></table></div><div class="note" style="margin-top:14px;">O primeiro cadastro vira <b>admin</b> automaticamente. Aqui você promove/rebaixa papéis, vê quem já importou plano e remove acessos. Na versão Supabase, isso passa a usar a tabela de usuários com RLS.</div></div>
-    <div class="card"><div class="card-h"><span class="eyebrow">Onboarding de alunos</span><h2>Relatório de requisição de dados</h2></div><p style="font-size:13px;color:var(--ink-soft);margin-top:0;">Envie este roteiro para o aluno responder. Com as respostas, a Claude gera o plano em JSON, que o aluno importa no app.</p><button class="btn-line" id="copyReqBtn">📋 Copiar roteiro de requisição</button><textarea class="code" id="reqText" style="margin-top:12px;min-height:220px;" readonly></textarea></div>
+    <div class="card"><div class="card-h"><span class="eyebrow">Onboarding de alunos</span><h2>Relatório de requisição de dados</h2></div><p style="font-size:13px;color:var(--ink-soft);margin-top:0;">Envie este roteiro para o aluno responder. Com as respostas, a Claude gera o plano em JSON, que o aluno importa no app.</p><button class="btn-line" id="copyReqBtn">Copiar roteiro de requisição</button><textarea class="code" id="reqText" style="margin-top:12px;min-height:220px;" readonly></textarea></div>
   </section>
 
 </div>
@@ -1010,7 +1010,7 @@ function bindTasks(scope){
 }
 
 function renderHero(){
-  document.getElementById('heroHi').textContent=`Olá, Dr. ${ME.name.split(' ')[0]} 🩺`;
+  document.getElementById('heroHi').textContent=`Olá, ${ME.name.split(' ')[0]}`;
   document.getElementById('heroSub').textContent=PLAN?(PLAN.course||'Bora estudar.'):'Importe seu plano para começar.';
   const ed=examDate(); const days=ed?Math.max(0,Math.ceil((ed-new Date())/86400000)):'–';
   document.getElementById('heroChips').innerHTML=
@@ -1070,8 +1070,22 @@ function renderDashboard(){
 function renderMetas(){
   const el=document.getElementById('scoreRows');
   if(!PLAN||!(PLAN.scoreAreas&&PLAN.scoreAreas.length)){el.innerHTML='<div class="empty">Importe um plano com áreas de nota para ver suas metas.</div>';document.getElementById('metasNote').textContent='';return;}
-  el.innerHTML=PLAN.scoreAreas.map(a=>{const v=scoreLog[a.key]!==undefined?parseFloat(scoreLog[a.key]):a.current;const pct=Math.min(100,v/a.target*100);return `<div class="bar-row" style="grid-template-columns:130px 1fr 72px;"><div class="bar-name">${a.name}</div><div class="track"><div class="fill" style="width:${pct}%"></div></div><input class="score-input" type="number" step="0.1" value="${v}" data-area="${a.key}"></div><div style="font-size:10.5px;color:var(--ink-faint);font-weight:600;margin:-2px 0 6px;">atual ${(+v).toFixed(1)} → meta ${a.target}</div>`;}).join('');
-  el.querySelectorAll('.score-input').forEach(inp=>inp.addEventListener('change',e=>{scoreLog[e.target.dataset.area]=e.target.value;store.set('scores',scoreLog);renderAll();}));
+  const SCALE=1000; // barra vai de 0 até 1000 (escala ENEM), meta marcada em outra cor
+  el.innerHTML=PLAN.scoreAreas.map(a=>{
+    const v=scoreLog[a.key]!==undefined?parseFloat(scoreLog[a.key]):a.current;
+    const donePct=Math.max(0,Math.min(100,v/SCALE*100));
+    const tgtPct=Math.max(0,Math.min(100,a.target/SCALE*100));
+    const gapW=Math.max(0,tgtPct-donePct);
+    const falta=Math.max(0,a.target-v);
+    return `<div class="meta-row">
+      <div class="meta-top"><span class="meta-name">${a.name}</span>
+        <span class="meta-nums"><span class="cur">${(+v).toFixed(0)}</span> <span style="color:var(--ink-faint)">→</span> <span class="tgt">${a.target}</span></span></div>
+      <div class="meta-bar"><div class="done" style="width:${donePct}%"></div><div class="gap" style="left:${donePct}%;width:${gapW}%"></div></div>
+      <div class="meta-foot"><span>onde estou</span>${falta>0?`<span class="falta">faltam ${falta.toFixed(0)} pts</span>`:'<span style="color:var(--green)">meta atingida ✓</span>'}<span>meta ${a.target}</span></div>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:8px;"><span style="font-size:11px;color:var(--ink-faint);font-weight:600;">ajustar nota atual</span><input class="meta-edit" type="number" step="0.1" value="${(+v).toFixed(1)}" data-area="${a.key}"></div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.meta-edit').forEach(inp=>inp.addEventListener('change',e=>{scoreLog[e.target.dataset.area]=e.target.value;store.set('scores',scoreLog);renderAll();}));
   document.getElementById('metasNote').innerHTML=PLAN.cutoffNote||'';
 }
 
@@ -1316,25 +1330,25 @@ function chime(){
 }
 function pomoRender(){
   const t=document.getElementById('pfTime'); if(t)t.textContent=pomoFmt(pomoLeft);
+  const m=document.getElementById('pmMini'); if(m)m.textContent=pomoFmt(pomoLeft);
   const p=document.getElementById('pfProg'); if(p)p.style.width=(100*(1-pomoLeft/(pomoMin*60)))+'%';
-  const s=document.getElementById('pfSub'); if(s)s.textContent = pomoRunning?('foco · hoje '+fmtHM(studyToday().min)):('hoje '+fmtHM(studyToday().min));
+  const s=document.getElementById('pfSub'); if(s)s.textContent = pomoRunning?('em foco · hoje '+fmtHM(studyToday().min)):('hoje '+fmtHM(studyToday().min));
 }
-function pomoSetSub(txt){const s=document.getElementById('pfSub');if(s)s.textContent=txt;}
 function pomoSetBtn(txt){const b=document.getElementById('pfToggle');if(b)b.textContent=txt;}
 function pomoSet(min){
   pomoMin=min;pomoLeft=min*60;pomoRunning=false;clearInterval(pomoTimer);
-  document.getElementById('pomoFab')?.classList.remove('running');
-  pomoSetBtn('▶');pomoRender();
+  document.getElementById('pomoMini')?.classList.remove('running');
+  pomoSetBtn('Iniciar');pomoRender();
 }
 function pomoTick(){
   pomoLeft--;
   if(pomoLeft<=0){
     clearInterval(pomoTimer);pomoRunning=false;pomoLeft=0;
-    document.getElementById('pomoFab')?.classList.remove('running');
+    document.getElementById('pomoMini')?.classList.remove('running');
     logStudyMinutes(pomoMin);
     chime();
-    pomoSetBtn('▶');
-    toast('Ciclo concluído! +'+pomoMin+' min de foco 🎯');
+    pomoSetBtn('Iniciar');
+    toast('Ciclo concluído · +'+pomoMin+' min de foco');
     renderEstudo();renderStudSummary();pomoRender();
     setTimeout(()=>pomoSet(pomoMin),1600);
     return;
@@ -1344,13 +1358,13 @@ function pomoTick(){
 function pomoToggle(){
   if(pomoRunning){
     clearInterval(pomoTimer);pomoRunning=false;
-    document.getElementById('pomoFab')?.classList.remove('running');
-    pomoSetBtn('▶');pomoRender();
+    document.getElementById('pomoMini')?.classList.remove('running');
+    pomoSetBtn('Continuar');pomoRender();
   }else{
     try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(e){}
     pomoRunning=true;
-    document.getElementById('pomoFab')?.classList.add('running');
-    pomoSetBtn('❚❚');pomoRender();
+    document.getElementById('pomoMini')?.classList.add('running');
+    pomoSetBtn('Pausar');pomoRender();
     pomoTimer=setInterval(pomoTick,1000);
   }
 }
@@ -1376,12 +1390,16 @@ function renderEstudo(){
 }
 
 /* bindings do Pomodoro flutuante + Estudo */
-document.getElementById('pfToggle')?.addEventListener('click',pomoToggle);
-document.getElementById('pfReset')?.addEventListener('click',()=>pomoSet(pomoMin));
-document.querySelectorAll('#pfPresets button').forEach(b=>b.addEventListener('click',()=>{
+document.getElementById('pfToggle')?.addEventListener('click',e=>{e.stopPropagation();pomoToggle();});
+document.getElementById('pfReset')?.addEventListener('click',e=>{e.stopPropagation();pomoSet(pomoMin);});
+document.querySelectorAll('#pfPresets button').forEach(b=>b.addEventListener('click',e=>{
+  e.stopPropagation();
   document.querySelectorAll('#pfPresets button').forEach(x=>x.classList.remove('active'));
   b.classList.add('active'); pomoSet(parseInt(b.dataset.min));
 }));
+document.getElementById('pomoPop')?.addEventListener('click',e=>e.stopPropagation());
+document.getElementById('pomoMini')?.addEventListener('click',()=>document.getElementById('pomoPop').classList.toggle('show'));
+document.addEventListener('click',e=>{if(!e.target.closest('#pomoMini'))document.getElementById('pomoPop')?.classList.remove('show');});
 document.getElementById('stManualAdd')?.addEventListener('click',()=>{
   const inp=document.getElementById('stManual');const m=parseInt(inp.value);
   if(!m||m<=0){toast('Digite os minutos.');return;}
@@ -1395,7 +1413,7 @@ document.getElementById('qAdd')?.addEventListener('click',()=>{
   const corr=isNaN(correct)?0:Math.min(correct,total);
   EXTRAS.questions.push({date:todayISO(),total,correct:corr,area});saveExtras();
   document.getElementById('qIn').value='';document.getElementById('qCorrIn').value='';
-  renderEstudo();renderStudSummary();toast('Registro salvo! 🎯');
+  renderEstudo();renderStudSummary();toast('Registro salvo');
 });
 
 /* ---- FOTO DE PERFIL ---- */
@@ -1420,7 +1438,7 @@ document.getElementById('pfPhoto')?.addEventListener('change',e=>{
       const S=256,c=document.createElement('canvas');c.width=S;c.height=S;
       const side=Math.min(img.width,img.height);
       c.getContext('2d').drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,S,S);
-      EXTRAS.avatar=c.toDataURL('image/jpeg',0.82);saveExtras();applyAvatar();toast('Foto atualizada! 📸');
+      EXTRAS.avatar=c.toDataURL('image/jpeg',0.82);saveExtras();applyAvatar();toast('Foto atualizada');
     };
     img.onerror=()=>toast('Não consegui ler essa imagem.');
     img.src=rd.result;
@@ -1459,8 +1477,8 @@ function renderEvo(){
     el.innerHTML=`<div class="evo-head"><div class="evo-cur">${cur}</div><div class="evo-meta">${trend} <span style="color:var(--ink-faint)">· ${arr.length} registro(s)</span></div></div>${evoSpark(arr,tgt,uid)}${proj!==null?`<div class="evo-proj">Projeção próxima: <b>~${proj}</b> · meta ${tgt}</div>`:`<div class="evo-proj">meta ${tgt}</div>`}`;
   });
 }
-document.getElementById('redAdd')?.addEventListener('click',()=>{const v=parseInt(document.getElementById('redIn').value);if(isNaN(v)||v<0||v>1000){toast('Nota de 0 a 1000.');return;}EXTRAS.redacao.push({date:todayISO(),score:v});saveExtras();document.getElementById('redIn').value='';renderEvo();toast('Nota de redação registrada! ✍️');});
-document.getElementById('simAdd')?.addEventListener('click',()=>{const v=parseInt(document.getElementById('simIn').value);if(isNaN(v)||v<0||v>1000){toast('Média de 0 a 1000.');return;}EXTRAS.simulado.push({date:todayISO(),score:v});saveExtras();document.getElementById('simIn').value='';renderEvo();toast('Simulado registrado! 📊');});
+document.getElementById('redAdd')?.addEventListener('click',()=>{const v=parseInt(document.getElementById('redIn').value);if(isNaN(v)||v<0||v>1000){toast('Nota de 0 a 1000.');return;}EXTRAS.redacao.push({date:todayISO(),score:v});saveExtras();document.getElementById('redIn').value='';renderEvo();toast('Nota de redação registrada');});
+document.getElementById('simAdd')?.addEventListener('click',()=>{const v=parseInt(document.getElementById('simIn').value);if(isNaN(v)||v<0||v>1000){toast('Média de 0 a 1000.');return;}EXTRAS.simulado.push({date:todayISO(),score:v});saveExtras();document.getElementById('simIn').value='';renderEvo();toast('Simulado registrado');});
 
 /* ---- PERFIL ---- */
 function renderPerfil(){
@@ -1569,11 +1587,17 @@ function escapeHtml(value){
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1700);}
 function xpPop(ev){const x=ev.clientX||innerWidth/2,y=ev.clientY||innerHeight/2;const el=document.createElement('div');el.className='xp-pop';el.textContent='+'+XP_PER_TASK+' XP';el.style.left=x+'px';el.style.top=y+'px';document.body.appendChild(el);setTimeout(()=>el.remove(),1000);}
 let theme=LS.get('rm-theme')||'light';document.body.setAttribute('data-theme',theme);
-function paintThemeBtns(){document.querySelectorAll('.theme-toggle').forEach(b=>b.textContent=theme==='dark'?'☀️':'🌙');}
+function paintThemeBtns(){document.querySelectorAll('.theme-toggle').forEach(b=>b.innerHTML=theme==='dark'?svg('sun'):svg('moon'));}
 document.querySelectorAll('.theme-toggle').forEach(b=>b.addEventListener('click',()=>{theme=theme==='dark'?'light':'dark';document.body.setAttribute('data-theme',theme);LS.set('rm-theme',theme);paintThemeBtns();}));
 paintThemeBtns();
-document.getElementById('avatarBtn').addEventListener('click',()=>switchTab('perfil'));
-document.getElementById('sbUser')?.addEventListener('click',()=>switchTab('perfil'));
+document.getElementById('avatarBtn').addEventListener('click',e=>{e.stopPropagation();document.getElementById('profileMenu').classList.toggle('show');});
+document.getElementById('profileMenu').addEventListener('click',e=>e.stopPropagation());
+document.addEventListener('click',e=>{if(!e.target.closest('.profile-wrap'))document.getElementById('profileMenu')?.classList.remove('show');});
+document.querySelectorAll('.pm-item').forEach(b=>b.addEventListener('click',()=>{
+  const a=b.dataset.pm; document.getElementById('profileMenu').classList.remove('show');
+  if(a==='logout'){document.getElementById('logoutBtn').click();}
+  else{switchTab(a);}
+}));
 
 /* ---- IMPORT / EXPORT ---- */
 function loadPlanFromObj(obj){
@@ -1587,7 +1611,7 @@ function loadPlanFromObj(obj){
   saveProgress();
 }
 function importText(txt){
-  try{const obj=JSON.parse(txt);loadPlanFromObj(obj);wIdx=null;renderAll();switchTab('dashboard');toast('Plano importado! 🎉');}
+  try{const obj=JSON.parse(txt);loadPlanFromObj(obj);wIdx=null;renderAll();switchTab('dashboard');toast('Plano importado');}
   catch(e){toast('Erro: '+e.message);}
 }
 document.getElementById('importPasteBtn').addEventListener('click',()=>{const t=document.getElementById('planPaste').value.trim();if(!t){toast('Cole o JSON primeiro.');return;}importText(t);});
@@ -1598,8 +1622,8 @@ document.getElementById('emptyImportBtn').addEventListener('click',()=>switchTab
 document.getElementById('copyReqBtn').addEventListener('click',()=>{navigator.clipboard?.writeText(REQ_REPORT).then(()=>toast('Roteiro copiado!'),()=>toast('Selecione e copie manualmente.'));});
 
 /* ============================ AUTH FLOW ============================ */
-function showAuth(){document.getElementById('authScreen').classList.remove('hidden');document.getElementById('authBg').classList.remove('hidden');document.getElementById('app').classList.add('hidden');document.getElementById('botnav').classList.add('hidden');document.getElementById('pomoFab').classList.add('hidden');}
-function showApp(){document.getElementById('authScreen').classList.add('hidden');document.getElementById('authBg').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('botnav').classList.remove('hidden');document.getElementById('pomoFab').classList.remove('hidden');pomoRender();}
+function showAuth(){document.getElementById('authScreen').classList.remove('hidden');document.getElementById('authBg').classList.remove('hidden');document.getElementById('app').classList.add('hidden');document.getElementById('botnav').classList.add('hidden');}
+function showApp(){document.getElementById('authScreen').classList.add('hidden');document.getElementById('authBg').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('botnav').classList.remove('hidden');pomoRender();}
 document.getElementById('toSignup').addEventListener('click',()=>{document.getElementById('loginView').classList.add('hidden');document.getElementById('signupView').classList.remove('hidden');});
 document.getElementById('toLogin').addEventListener('click',()=>{document.getElementById('signupView').classList.add('hidden');document.getElementById('loginView').classList.remove('hidden');});
 function authErr(el,m){const e=document.getElementById(el);e.textContent=m;e.classList.add('show');}
@@ -1755,7 +1779,7 @@ Responda o máximo que puder. Com isto, geramos seu plano em JSON para importar 
    linguagens, simulado, rotina, outro.`;
 
 /* ============================ BOOT ============================ */
-console.log('%cRota Med · layout v2.3 (pomodoro flutuante + estudo)','color:#7C5CFF;font-weight:700;font-size:13px');
+console.log('%cRota Med · layout v2.5 (flat minimal · asaad)','color:#7C5CFF;font-weight:700;font-size:13px');
 (async function boot(){
   try{
     const cur=await authApi.current();
