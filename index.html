@@ -486,7 +486,8 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
 .app-card{position:relative;display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);cursor:pointer;transition:border-color .15s,transform .15s;text-align:left;color:var(--ink);}
 .app-card:hover{border-color:var(--accent);transform:translateY(-2px);}
 .app-ico{position:relative;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:17px;color:#fff;background:var(--accent);overflow:hidden;}
-.app-fav{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:6px;background:#fff;}
+.app-ico.has-fav{background:var(--surface-2);}
+.app-fav{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:5px;}
 .app-name{font-size:14px;font-weight:700;line-height:1.25;color:var(--ink);}
 .app-url{font-size:11px;color:var(--ink-faint);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .app-edit{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-faint);display:grid;place-items:center;opacity:0;transition:opacity .15s;}
@@ -1324,6 +1325,10 @@ document.getElementById('rnInput').addEventListener('keydown',e=>{if(e.key==='En
 document.getElementById('renameModal').addEventListener('click',e=>{if(e.target.id==='renameModal')closeRename();});
 
 /* ---- APPS / integrações ---- */
+window.favFallback=function(img){
+  if(img.dataset.step!=='1'){img.dataset.step='1';img.src='https://icons.duckduckgo.com/ip3/'+img.dataset.h+'.ico';return;}
+  const p=img.parentElement; if(p)p.classList.remove('has-fav'); img.remove();
+};
 function renderApps(){
   const g=document.getElementById('appsGrid'); if(!g)return;
   const apps=EXTRAS.apps||[];
@@ -1331,8 +1336,8 @@ function renderApps(){
     const initial=((a.name||'?').trim()[0]||'?').toUpperCase();
     let host='',label='toque para adicionar o link';
     if(a.url){try{host=new URL(a.url).hostname.replace(/^www\./,'');label=host;}catch(e){host='';label=a.url;}}
-    const fav=host?`<img class="app-fav" src="https://icons.duckduckgo.com/ip3/${encodeURIComponent(host)}.ico" alt="" loading="lazy" onerror="this.remove()">`:'';
-    return `<button class="app-card" data-app="${i}"><span class="app-edit" data-appedit="${i}" title="Editar">${svg('edit')}</span><div class="app-ico">${initial}${fav}</div><div class="app-name">${a.name||'App'}</div><div class="app-url">${label}</div></button>`;
+    const fav=host?`<img class="app-fav" src="https://${host}/favicon.ico" data-h="${host}" alt="" loading="lazy" onerror="favFallback(this)">`:'';
+    return `<button class="app-card" data-app="${i}"><span class="app-edit" data-appedit="${i}" title="Editar">${svg('edit')}</span><div class="app-ico${host?' has-fav':''}">${initial}${fav}</div><div class="app-name">${a.name||'App'}</div><div class="app-url">${label}</div></button>`;
   }).join('')+`<button class="app-add" id="appAddBtn">${svg('plus')} Adicionar app</button>`;
   g.querySelectorAll('.app-card').forEach(c=>c.addEventListener('click',e=>{
     if(e.target.closest('[data-appedit]'))return;
