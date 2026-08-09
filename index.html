@@ -1833,7 +1833,10 @@ function loadPlanFromObj(obj){
   if(!obj||typeof obj!=='object')throw new Error('JSON inválido.');
   if(!obj.phases||!Array.isArray(obj.phases))throw new Error('O JSON precisa ter um array "phases".');
   obj.customTasks=obj.customTasks||[];
-  PLAN=obj;store.set('plan',PLAN);buildFromPlan();
+  PLAN=obj;store.set('plan',PLAN);
+  // limpa arrastos e renomeações antigos (grudam em posições do plano anterior e embaralham o novo)
+  EXTRAS.taskDay={}; EXTRAS.taskText={}; saveExtras();
+  buildFromPlan();
   // reset ids that no longer exist
   Object.keys(statusMap).forEach(id=>{if(!taskIndex[id])delete statusMap[id];});
   Object.keys(completionLog).forEach(id=>{if(!taskIndex[id])delete completionLog[id];});
