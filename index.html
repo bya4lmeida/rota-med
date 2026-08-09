@@ -483,10 +483,11 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
 
 /* Apps / integrações */
 .apps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
-.app-card{position:relative;display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);cursor:pointer;transition:border-color .15s,transform .15s;text-align:left;}
+.app-card{position:relative;display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);cursor:pointer;transition:border-color .15s,transform .15s;text-align:left;color:var(--ink);}
 .app-card:hover{border-color:var(--accent);transform:translateY(-2px);}
-.app-ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:17px;color:#fff;background:var(--accent);background-size:cover;background-position:center;}
-.app-name{font-size:14px;font-weight:700;line-height:1.25;}
+.app-ico{position:relative;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:17px;color:#fff;background:var(--accent);overflow:hidden;}
+.app-fav{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff;}
+.app-name{font-size:14px;font-weight:700;line-height:1.25;color:var(--ink);}
 .app-url{font-size:11px;color:var(--ink-faint);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .app-edit{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-faint);display:grid;place-items:center;opacity:0;transition:opacity .15s;}
 .app-card:hover .app-edit{opacity:1;}
@@ -686,7 +687,7 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
   <section class="panel" data-panel="apps">
     <div class="card">
       <div class="card-h"><span class="eyebrow">Integrações</span><h2>Meus apps</h2></div>
-      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">Atalhos rápidos para as plataformas que você usa no dia a dia. Toque para abrir; passe o mouse e use o lápis para editar.</p>
+      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">Seus atalhos do dia a dia. Toque para abrir, lápis para editar.</p>
       <div class="apps-grid" id="appsGrid"></div>
     </div>
   </section>
@@ -1328,9 +1329,10 @@ function renderApps(){
   const apps=EXTRAS.apps||[];
   g.innerHTML=apps.map((a,i)=>{
     const initial=((a.name||'?').trim()[0]||'?').toUpperCase();
-    let host='toque para definir o link';
-    if(a.url){try{host=new URL(a.url).hostname.replace(/^www\./,'');}catch(e){host=a.url;}}
-    return `<button class="app-card" data-app="${i}"><span class="app-edit" data-appedit="${i}" title="Editar">${svg('edit')}</span><div class="app-ico">${initial}</div><div class="app-name">${a.name||'App'}</div><div class="app-url">${host}</div></button>`;
+    let host='',label='toque para adicionar o link';
+    if(a.url){try{host=new URL(a.url).hostname.replace(/^www\./,'');label=host;}catch(e){host='';label=a.url;}}
+    const fav=host?`<img class="app-fav" src="https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(host)}" alt="" loading="lazy" onerror="this.remove()">`:'';
+    return `<button class="app-card" data-app="${i}"><span class="app-edit" data-appedit="${i}" title="Editar">${svg('edit')}</span><div class="app-ico">${initial}${fav}</div><div class="app-name">${a.name||'App'}</div><div class="app-url">${label}</div></button>`;
   }).join('')+`<button class="app-add" id="appAddBtn">${svg('plus')} Adicionar app</button>`;
   g.querySelectorAll('.app-card').forEach(c=>c.addEventListener('click',e=>{
     if(e.target.closest('[data-appedit]'))return;
