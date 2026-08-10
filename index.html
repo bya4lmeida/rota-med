@@ -1532,8 +1532,10 @@ function fmtH(min){const v=(min/60);return (Number.isInteger(v)?v:v.toFixed(1))+
 function qTotals(){let total=0,correct=0;EXTRAS.questions.forEach(q=>{total+=q.total||0;correct+=q.correct||0;});return {total,correct,acc:total?Math.round(correct/total*100):null};}
 
 /* ---- POMODORO FLUTUANTE (global, todas as abas) + som suave ---- */
-let pomoMin=30, pomoLeft=30*60, pomoTimer=null, pomoRunning=false, audioCtx=null;
+let pomoMin=30, pomoLeft=30*60, pomoTimer=null, pomoRunning=false, pomoEndAt=null, audioCtx=null;
+const POMO_BASE_TITLE='Rota Med · Planner ENEM';
 function pomoFmt(s){const m=Math.floor(s/60),sec=s%60;return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;}
+function setPomoTitle(){document.title=pomoRunning?('● '+pomoFmt(pomoLeft)+' · Foco'):POMO_BASE_TITLE;}
 function chime(){
   try{
     audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
@@ -1555,41 +1557,54 @@ function pomoRender(){
   const m=document.getElementById('pmMini'); if(m)m.textContent=pomoFmt(pomoLeft);
   const p=document.getElementById('pfProg'); if(p)p.style.width=(100*(1-pomoLeft/(pomoMin*60)))+'%';
   const s=document.getElementById('pfSub'); if(s)s.textContent = pomoRunning?('em foco · hoje '+fmtHM(studyToday().min)):('hoje '+fmtHM(studyToday().min));
+  setPomoTitle();
 }
 function pomoSetBtn(txt){const b=document.getElementById('pfToggle');if(b)b.textContent=txt;}
 function pomoSet(min){
-  pomoMin=min;pomoLeft=min*60;pomoRunning=false;clearInterval(pomoTimer);
+  pomoMin=min;pomoLeft=min*60;pomoRunning=false;pomoEndAt=null;clearInterval(pomoTimer);pomoTimer=null;
   document.getElementById('pomoMini')?.classList.remove('running');
   pomoSetBtn('Iniciar');pomoRender();
 }
+// recalcula o restante pelo relógio real — imune ao throttling de aba em 2º plano
+function pomoSync(){
+  if(!pomoRunning||pomoEndAt==null)return false;
+  pomoLeft=Math.max(0,Math.round((pomoEndAt-Date.now())/1000));
+  return pomoLeft<=0;
+}
+function pomoComplete(){
+  clearInterval(pomoTimer);pomoTimer=null;pomoRunning=false;pomoLeft=0;pomoEndAt=null;
+  document.getElementById('pomoMini')?.classList.remove('running');
+  logStudyMinutes(pomoMin);
+  chime();
+  pomoSetBtn('Iniciar');
+  toast('Ciclo concluído · +'+pomoMin+' min de foco');
+  renderEstudo();renderStudSummary();renderMissions();pomoRender();
+  setTimeout(()=>pomoSet(pomoMin),1600);
+}
 function pomoTick(){
-  pomoLeft--;
-  if(pomoLeft<=0){
-    clearInterval(pomoTimer);pomoRunning=false;pomoLeft=0;
-    document.getElementById('pomoMini')?.classList.remove('running');
-    logStudyMinutes(pomoMin);
-    chime();
-    pomoSetBtn('Iniciar');
-    toast('Ciclo concluído · +'+pomoMin+' min de foco');
-    renderEstudo();renderStudSummary();renderMissions();pomoRender();
-    setTimeout(()=>pomoSet(pomoMin),1600);
-    return;
-  }
+  if(pomoSync()){pomoComplete();return;}
   pomoRender();
 }
 function pomoToggle(){
   if(pomoRunning){
-    clearInterval(pomoTimer);pomoRunning=false;
+    pomoSync(); // fixa o restante exato antes de pausar
+    clearInterval(pomoTimer);pomoTimer=null;pomoRunning=false;pomoEndAt=null;
     document.getElementById('pomoMini')?.classList.remove('running');
     pomoSetBtn('Continuar');pomoRender();
   }else{
     try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(e){}
     pomoRunning=true;
+    pomoEndAt=Date.now()+pomoLeft*1000; // horário-alvo de término
     document.getElementById('pomoMini')?.classList.add('running');
     pomoSetBtn('Pausar');pomoRender();
+    clearInterval(pomoTimer);
     pomoTimer=setInterval(pomoTick,1000);
   }
 }
+// ao voltar pra aba, sincroniza na hora (corrige atraso acumulado em 2º plano)
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&pomoRunning){ if(pomoSync())pomoComplete(); else pomoRender(); }
+});
 
 function renderStudSummary(){
   const el=document.getElementById('studSummary'); if(!el)return;
@@ -2011,7 +2026,7 @@ Responda o máximo que puder. Com isto, geramos seu plano em JSON para importar 
    linguagens, simulado, rotina, outro.`;
 
 /* ============================ BOOT ============================ */
-console.log('%cRota Med · layout v2.7 (apps · estudo minimal · relatório por matéria)','color:#7C5CFF;font-weight:700;font-size:13px');
+console.log('%cRota Med · layout v2.7 (pomodoro relógio-real + título da aba)','color:#7C5CFF;font-weight:700;font-size:13px');
 (async function boot(){
   try{
     const cur=await authApi.current();
