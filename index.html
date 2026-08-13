@@ -543,6 +543,13 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
 .rv-x{color:var(--ink-faint);cursor:pointer;display:grid;place-items:center;}
 .rv-x:hover{color:var(--red,#E5484D);}
 .rv-group-h{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin:16px 0 4px;}
+.pp-manual{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);}
+.pp-manual .ppm-lab{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px;}
+.pp-manual .ppm-row{display:flex;gap:6px;}
+.pp-manual input{flex:1;min-width:0;font-size:13px;border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:var(--surface-2);color:var(--ink);}
+.pp-manual button{border:none;border-radius:9px;padding:0 13px;background:var(--accent);color:#fff;font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap;}
+.pp-stopalarm{width:100%;margin-top:10px;border:none;border-radius:10px;padding:11px;background:var(--red,#E5484D);color:#fff;font-weight:800;font-size:13px;cursor:pointer;animation:alarmpulse 1s infinite;}
+@keyframes alarmpulse{0%,100%{opacity:1}50%{opacity:.55}}
 </style>
 </head>
 <body data-theme="light">
@@ -600,6 +607,11 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
           <div class="pp-presets" id="pfPresets"><button data-min="30" class="active">30 min</button><button data-min="50">50 min</button></div>
           <div class="pp-actions"><button class="pp-start" id="pfToggle">Iniciar</button><button class="pp-reset" id="pfReset" title="Zerar">↺</button></div>
           <div class="pp-prog"><i id="pfProg"></i></div>
+          <button class="pp-stopalarm" id="pfStopAlarm" style="display:none;">Parar alarme</button>
+          <div class="pp-manual">
+            <div class="ppm-lab">Registrar tempo manualmente</div>
+            <div class="ppm-row"><input type="number" id="pfManual" min="1" placeholder="min (ex: 40)"><button id="pfManualAdd">Adicionar</button></div>
+          </div>
         </div>
       </div>
       <div class="profile-wrap">
@@ -622,11 +634,10 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
 
   <section class="panel active" data-panel="dashboard">
     <div id="dashHasPlan">
-      <div class="grid g-4" style="margin-bottom:14px;">
+      <div class="grid g-3" style="margin-bottom:14px;">
         <div class="stat accent"><div class="st-top"><span class="st-lab">Sequência</span><span class="st-ic" id="stStreakIc"></span></div><div class="st-v"><span id="stStreak">0</span> <span style="font-size:14px;font-weight:600;color:var(--ink-soft)">dias</span></div><div class="streak-dots" id="stStreakDots"></div></div>
         <div class="stat"><div class="st-top"><span class="st-lab">Questões</span><span class="st-ic" id="stQIc"></span></div><div class="st-v" id="stQuest">0</div><div class="st-sub">respondidas no total</div></div>
         <div class="stat"><div class="st-top"><span class="st-lab">Rendimento</span><span class="st-ic" id="stRIc"></span></div><div class="st-v" id="stRend">–</div><div class="st-sub" id="stRendSub">registre questões</div></div>
-        <div class="stat"><div class="st-top"><span class="st-lab">Foco</span><span class="st-ic" id="stFIc"></span></div><div class="st-v" id="stFoco">0h</div><div class="st-sub">esta semana</div></div>
       </div>
       <div class="grid g-2">
         <div class="card"><div class="card-h"><span class="eyebrow">Meta do dia</span><h2>Missões de hoje</h2></div>
@@ -640,7 +651,7 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
             </div>
           </div>
         </div>
-        <div class="card"><div class="card-h"><span class="eyebrow">Ritmo</span><h2>Foco desta semana</h2></div><div class="focus-chart" id="focusChart"></div></div>
+        <div class="card"><div class="card-h" style="display:flex;align-items:baseline;justify-content:space-between;"><div><span class="eyebrow">Ritmo</span><h2>Foco desta semana</h2></div><div style="text-align:right;"><div style="font-size:22px;font-weight:800;line-height:1;" id="ritmoHoras">0min</div><div style="font-size:11px;color:var(--ink-faint);font-weight:600;" id="ritmoSess">0 sessões</div></div></div><div class="focus-chart" id="focusChart"></div></div>
       </div>
     </div>
     <div id="dashNoPlan" class="card hidden"><div class="empty-hero"><div class="big-ic" id="emptyIc"></div><h3>Nenhum plano importado ainda</h3><p>Peça à Claude para gerar seu plano em JSON e importe na aba Perfil para começar.</p><button class="btn-primary" style="max-width:260px;margin:0 auto;" id="emptyImportBtn">Importar plano</button></div></div>
@@ -688,31 +699,13 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
   </section>
 
   <section class="panel" data-panel="estudo">
-    <div class="grid g-3" style="margin-bottom:14px;">
-      <div class="stat"><div class="st-top"><span class="st-lab">Hoje</span><span class="st-ic" id="stHojeIc"></span></div><div class="st-v" id="stHoje">0min</div><div class="st-sub" id="stHojeSess">0 sessões</div></div>
-      <div class="stat"><div class="st-top"><span class="st-lab">Esta semana</span><span class="st-ic" id="stSemIc"></span></div><div class="st-v" id="stSemana">0h</div><div class="st-sub" id="stSemanaSess">0 sessões</div></div>
-      <div class="stat"><div class="st-top"><span class="st-lab">Total acumulado</span><span class="st-ic" id="stTotIc"></span></div><div class="st-v" id="stTotal">0h</div><div class="st-sub" id="stTotalSess">0 sessões</div></div>
-    </div>
     <div class="card">
-      <div class="card-h"><span class="eyebrow">Foco</span><h2>Registrar tempo</h2></div>
-      <div style="display:flex;gap:8px;max-width:380px;"><input type="number" id="stManual" min="1" placeholder="minutos (ex: 40)" style="flex:1;font-size:14px;border:1px solid var(--line);border-radius:12px;padding:11px 14px;background:var(--surface-2);color:var(--ink);"><button class="mini-add" id="stManualAdd" style="padding:0 18px;">Adicionar</button></div>
-      <p style="font-size:12px;color:var(--ink-faint);margin:12px 0 0;">Ou use o <b>Pomodoro</b> no topo — cada ciclo concluído soma aqui automaticamente.</p>
-    </div>
-    <div class="card">
-      <div class="card-h"><span class="eyebrow">Desempenho</span><h2>Questões resolvidas</h2></div>
-      <div class="grid g-3" style="margin-bottom:4px;">
+      <div class="card-h" style="display:flex;align-items:center;justify-content:space-between;"><div><span class="eyebrow">Desempenho</span><h2>Questões resolvidas</h2></div><button class="btn-primary" id="openQModal" style="width:auto;padding:10px 16px;">Registrar questões</button></div>
+      <div class="grid g-3" style="margin:6px 0 4px;">
         <div class="stat"><div class="st-top"><span class="st-lab">Resolvidas</span><span class="st-ic" id="qIc1"></span></div><div class="st-v" id="qTotal">0</div><div class="st-sub" id="qSess">0 registros</div></div>
         <div class="stat"><div class="st-top"><span class="st-lab">Acertos</span><span class="st-ic" id="qIc2"></span></div><div class="st-v" id="qCorrect">0</div><div class="st-sub">acumulado</div></div>
         <div class="stat"><div class="st-top"><span class="st-lab">Taxa de acerto</span><span class="st-ic" id="qIc3"></span></div><div class="st-v" id="qAcc">–</div><div class="st-sub">meta 70%+</div></div>
       </div>
-      <div class="qform">
-        <div class="field" style="flex:1;min-width:110px;"><label>Resolvidas</label><input type="number" id="qIn" min="1" placeholder="ex: 30"></div>
-        <div class="field" style="flex:1;min-width:110px;"><label>Acertos</label><input type="number" id="qCorrIn" min="0" placeholder="ex: 22"></div>
-        <div class="field" style="flex:1.4;min-width:150px;"><label>Assunto</label><input type="text" id="qAssunto" placeholder="ex: Termoquímica"></div>
-        <select id="qArea" style="align-self:flex-end;"></select>
-        <button class="mini-add" id="qAdd" style="align-self:flex-end;padding:11px 18px;">Registrar</button>
-      </div>
-      <label class="qrev-check" id="qRevWrap"><input type="checkbox" id="qRevisar"><span class="qrev-box"></span><span>Projetar nas revisões <span style="color:var(--ink-faint);font-weight:500;">(agenda pela curva do esquecimento; deixe desmarcado se for só treino/fixação)</span></span></label>
       <div id="qHist" class="qhist"></div>
     </div>
     <div class="card">
@@ -796,6 +789,19 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
       <div><label>Nome</label><input type="text" id="appName" placeholder="Ex: Promedicina"></div>
       <div><label>Link (URL)</label><input type="url" id="appUrl" placeholder="https://..."></div>
       <div class="mform-actions"><button class="btn-primary" id="appSave">Salvar</button><button class="btn-danger" id="appDelete" style="display:none;">Remover</button><button class="btn-line" id="appCancel">Cancelar</button></div>
+    </div></div>
+  </div>
+</div>
+
+<div class="modal-ov" id="qModal">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-h"><div class="mh-l"><div class="t">Registrar questões</div><div class="s">Resultado de um bloco de questões</div></div><button class="modal-x" id="qmClose">✕</button></div>
+    <div class="modal-b"><div class="mform">
+      <div style="display:flex;gap:10px;"><div style="flex:1;"><label>Resolvidas</label><input type="number" id="qIn" min="1" placeholder="ex: 30"></div><div style="flex:1;"><label>Acertos</label><input type="number" id="qCorrIn" min="0" placeholder="ex: 22"></div></div>
+      <div><label>Assunto</label><input type="text" id="qAssunto" placeholder="ex: Termoquímica"></div>
+      <div><label>Matéria</label><select id="qArea" style="width:100%;font-size:14px;border:1px solid var(--line);border-radius:12px;padding:11px 14px;background:var(--surface-2);color:var(--ink);"></select></div>
+      <label class="qrev-check" id="qRevWrap"><input type="checkbox" id="qRevisar"><span class="qrev-box"></span><span>Projetar nas revisões <span style="color:var(--ink-faint);font-weight:500;">(agenda pela curva do esquecimento; deixe desmarcado se for só treino/fixação)</span></span></label>
+      <div class="mform-actions"><button class="btn-primary" id="qAdd">Registrar</button><button class="btn-line" id="qmCancel">Cancelar</button></div>
     </div></div>
   </div>
 </div>
@@ -1190,9 +1196,11 @@ function renderHero(){
   document.getElementById('heroHi').textContent=`Olá, ${pre}${first}${pre?' 🩺':''}`;
   document.getElementById('heroSub').textContent=PLAN?(PLAN.course||'Bora estudar.'):'Importe seu plano para começar.';
   const ed=examDate(); const days=ed?Math.max(0,Math.ceil((ed-new Date())/86400000)):'–';
+  const totH=fmtHM(studyTotal().min);
   document.getElementById('heroChips').innerHTML=
     `<span class="hero-chip">${svg('flame')}<b>${PLAN?streakDays():0}</b> dias</span>`+
     `<span class="hero-chip">${svg('bolt')}<b>${PLAN?xpToday():0}</b> XP hoje</span>`+
+    `<span class="hero-chip">${svg('clock')}<b>${totH}</b> no total</span>`+
     `<span class="hero-chip">${svg('calendar')}<b>${days}</b> p/ prova</span>`;
   const pn=document.getElementById('pmName'); if(pn)pn.textContent=ME.name||'Aluno';
   const pm=document.getElementById('pmMail'); if(pm)pm.textContent=ME.email||'';
@@ -1208,7 +1216,6 @@ function renderDashboard(){
   document.getElementById('stStreakIc').innerHTML=svg('flame');
   document.getElementById('stQIc').innerHTML=svg('help');
   document.getElementById('stRIc').innerHTML=svg('trending');
-  document.getElementById('stFIc').innerHTML=svg('clock');
   const sd=streakDays();
   document.getElementById('stStreak').textContent=sd;
   const {c:wc,dow}=weeklyFocus();
@@ -1218,7 +1225,8 @@ function renderDashboard(){
   document.getElementById('stRend').textContent=q.acc!==null?q.acc+'%':'–';
   document.getElementById('stRendSub').textContent=q.acc!==null?'de acerto':'registre questões';
   const sw=studyWeek();
-  document.getElementById('stFoco').textContent=fmtHM(sw.min);
+  const rh=document.getElementById('ritmoHoras'); if(rh)rh.textContent=fmtHM(sw.min);
+  const rs=document.getElementById('ritmoSess'); if(rs)rs.textContent=sw.sess+' sessões';
   renderMissions();
   const max=Math.max(1,...wc);
   document.getElementById('focusChart').innerHTML=DOW.map((d,i)=>`<div class="fc-col"><div class="fc-val">${wc[i]||''}</div><div class="fc-bar${i===dow?' today':''}" style="height:${Math.max(6,wc[i]/max*100)}%"></div><div class="fc-day">${d}</div></div>`).join('');
@@ -1603,6 +1611,54 @@ function chime(){
     });
   }catch(e){}
 }
+function chime(){ // alarme mais forte, em loop até parar manualmente
+  startAlarm();
+}
+let alarmTimer=null;
+function alarmBeep(){
+  try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended')audioCtx.resume();
+    const now=audioCtx.currentTime;
+    [880,1174.66,880,1318.51].forEach((f,i)=>{ // A5 D6 A5 E6 — mais alto e insistente
+      const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.type='triangle';o.frequency.value=f;o.connect(g);g.connect(audioCtx.destination);
+      const t=now+i*0.18;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(0.32,t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.34);
+      o.start(t);o.stop(t+0.38);
+    });
+  }catch(e){}
+}
+function startAlarm(){
+  stopAlarm();
+  alarmBeep();
+  alarmTimer=setInterval(alarmBeep,1500);
+  const b=document.getElementById('pfStopAlarm'); if(b)b.style.display='block';
+  document.getElementById('pomoPop')?.classList.add('show');
+}
+function stopAlarm(){
+  if(alarmTimer){clearInterval(alarmTimer);alarmTimer=null;}
+  const b=document.getElementById('pfStopAlarm'); if(b)b.style.display='none';
+}
+/* persistência do timer (sobrevive a refresh) */
+function pomoSaveState(){try{localStorage.setItem('rm_pomo',JSON.stringify({min:pomoMin,left:pomoLeft,running:pomoRunning,endAt:pomoEndAt}));}catch(e){}}
+function pomoRestore(){
+  let s; try{s=JSON.parse(localStorage.getItem('rm_pomo')||'null');}catch(e){s=null;}
+  if(!s)return;
+  pomoMin=s.min||30;
+  if(s.running&&s.endAt){
+    pomoEndAt=s.endAt; pomoLeft=Math.max(0,Math.round((pomoEndAt-Date.now())/1000));
+    if(pomoLeft<=0){pomoRunning=false;pomoComplete();return;}
+    pomoRunning=true;
+    document.getElementById('pomoMini')?.classList.add('running');
+    pomoSetBtn('Pausar');clearInterval(pomoTimer);pomoTimer=setInterval(pomoTick,1000);pomoRender();
+  }else{
+    pomoRunning=false;pomoEndAt=null;pomoLeft=(s.left!=null?s.left:pomoMin*60);
+    pomoSetBtn(pomoLeft<pomoMin*60?'Continuar':'Iniciar');pomoRender();
+  }
+}
 function pomoRender(){
   const t=document.getElementById('pfTime'); if(t)t.textContent=pomoFmt(pomoLeft);
   const m=document.getElementById('pmMini'); if(m)m.textContent=pomoFmt(pomoLeft);
@@ -1614,9 +1670,8 @@ function pomoSetBtn(txt){const b=document.getElementById('pfToggle');if(b)b.text
 function pomoSet(min){
   pomoMin=min;pomoLeft=min*60;pomoRunning=false;pomoEndAt=null;clearInterval(pomoTimer);pomoTimer=null;
   document.getElementById('pomoMini')?.classList.remove('running');
-  pomoSetBtn('Iniciar');pomoRender();
+  pomoSetBtn('Iniciar');pomoRender();pomoSaveState();
 }
-// recalcula o restante pelo relógio real — imune ao throttling de aba em 2º plano
 function pomoSync(){
   if(!pomoRunning||pomoEndAt==null)return false;
   pomoLeft=Math.max(0,Math.round((pomoEndAt-Date.now())/1000));
@@ -1626,33 +1681,34 @@ function pomoComplete(){
   clearInterval(pomoTimer);pomoTimer=null;pomoRunning=false;pomoLeft=0;pomoEndAt=null;
   document.getElementById('pomoMini')?.classList.remove('running');
   logStudyMinutes(pomoMin);
-  chime();
+  chime(); // alarme em loop até parar
   pomoSetBtn('Iniciar');
   toast('Ciclo concluído · +'+pomoMin+' min de foco');
-  renderEstudo();renderStudSummary();renderMissions();pomoRender();
-  setTimeout(()=>pomoSet(pomoMin),1600);
+  renderEstudo();renderStudSummary();renderMissions();renderDashboard();pomoRender();
+  pomoLeft=pomoMin*60;pomoSaveState();pomoRender();
 }
 function pomoTick(){
   if(pomoSync()){pomoComplete();return;}
-  pomoRender();
+  pomoRender();pomoSaveState();
 }
 function pomoToggle(){
+  stopAlarm();
   if(pomoRunning){
-    pomoSync(); // fixa o restante exato antes de pausar
+    pomoSync();
     clearInterval(pomoTimer);pomoTimer=null;pomoRunning=false;pomoEndAt=null;
     document.getElementById('pomoMini')?.classList.remove('running');
-    pomoSetBtn('Continuar');pomoRender();
+    pomoSetBtn('Continuar');pomoRender();pomoSaveState();
   }else{
     try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(e){}
     pomoRunning=true;
-    pomoEndAt=Date.now()+pomoLeft*1000; // horário-alvo de término
+    pomoEndAt=Date.now()+pomoLeft*1000;
     document.getElementById('pomoMini')?.classList.add('running');
     pomoSetBtn('Pausar');pomoRender();
     clearInterval(pomoTimer);
-    pomoTimer=setInterval(pomoTick,1000);
+    pomoTimer=setInterval(pomoTick,1000);pomoSaveState();
   }
 }
-// ao voltar pra aba, sincroniza na hora (corrige atraso acumulado em 2º plano)
+document.getElementById('pfStopAlarm')?.addEventListener('click',e=>{e.stopPropagation();stopAlarm();});
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&pomoRunning){ if(pomoSync())pomoComplete(); else pomoRender(); }
 });
@@ -1668,11 +1724,7 @@ function renderStudSummary(){
 
 function renderEstudo(){
   const setIc=(id,n)=>{const e=document.getElementById(id);if(e)e.innerHTML=svg(n);};
-  setIc('stHojeIc','timer');setIc('stSemIc','calendar');setIc('stTotIc','flame');
   setIc('qIc1','help');setIc('qIc2','check');setIc('qIc3','trending');
-  const st=studyToday(); const sh=document.getElementById('stHoje'); if(sh){sh.textContent=fmtHM(st.min);document.getElementById('stHojeSess').textContent=st.sess+' sessões';}
-  const sw=studyWeek(); const ss=document.getElementById('stSemana'); if(ss){ss.textContent=fmtHM(sw.min);document.getElementById('stSemanaSess').textContent=sw.sess+' sessões';}
-  const tt=studyTotal(); const stt=document.getElementById('stTotal'); if(stt){stt.textContent=fmtHM(tt.min);document.getElementById('stTotalSess').textContent=tt.sess+' sessões';}
   const q=qTotals(); const qt=document.getElementById('qTotal');
   if(qt){qt.textContent=q.total;document.getElementById('qCorrect').textContent=q.correct;document.getElementById('qAcc').textContent=q.acc!==null?q.acc+'%':'–';document.getElementById('qSess').textContent=EXTRAS.questions.length+' registros';}
   const qa=document.getElementById('qArea'); if(qa && !qa.dataset.f){qa.innerHTML=Object.keys(AREA_LABELS).map(a=>`<option value="${a}">${AREA_LABELS[a]}</option>`).join('');qa.value='fisica';qa.dataset.f='1';}
@@ -1698,11 +1750,25 @@ document.querySelectorAll('#pfPresets button').forEach(b=>b.addEventListener('cl
 document.getElementById('pomoPop')?.addEventListener('click',e=>e.stopPropagation());
 document.getElementById('pomoMini')?.addEventListener('click',()=>document.getElementById('pomoPop').classList.toggle('show'));
 document.addEventListener('click',e=>{if(!e.target.closest('#pomoMini'))document.getElementById('pomoPop')?.classList.remove('show');});
-document.getElementById('stManualAdd')?.addEventListener('click',()=>{
-  const inp=document.getElementById('stManual');const m=parseInt(inp.value);
+document.getElementById('pfManualAdd')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  const inp=document.getElementById('pfManual');const m=parseInt(inp.value);
   if(!m||m<=0){toast('Digite os minutos.');return;}
-  logStudyMinutes(m);inp.value='';renderEstudo();renderStudSummary();renderMissions();toast('+'+m+' min registrados.');
+  logStudyMinutes(m);inp.value='';renderEstudo();renderStudSummary();renderMissions();renderDashboard();pomoRender();toast('+'+m+' min registrados.');
 });
+document.getElementById('pfManual')?.addEventListener('click',e=>e.stopPropagation());
+document.getElementById('pfManual')?.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')document.getElementById('pfManualAdd').click();});
+/* ---- MODAL DE QUESTÕES ---- */
+function openQModal(){
+  const qa=document.getElementById('qArea'); if(qa && !qa.dataset.f){qa.innerHTML=Object.keys(AREA_LABELS).map(a=>`<option value="${a}">${AREA_LABELS[a]}</option>`).join('');qa.value='fisica';qa.dataset.f='1';}
+  document.getElementById('qModal').classList.add('show');
+  setTimeout(()=>document.getElementById('qIn').focus(),50);
+}
+function closeQModal(){document.getElementById('qModal').classList.remove('show');}
+document.getElementById('openQModal')?.addEventListener('click',openQModal);
+document.getElementById('qmClose')?.addEventListener('click',closeQModal);
+document.getElementById('qmCancel')?.addEventListener('click',closeQModal);
+document.getElementById('qModal')?.addEventListener('click',e=>{if(e.target.id==='qModal')closeQModal();});
 document.getElementById('qAdd')?.addEventListener('click',()=>{
   const total=parseInt(document.getElementById('qIn').value);
   const correct=parseInt(document.getElementById('qCorrIn').value);
@@ -1717,6 +1783,7 @@ document.getElementById('qAdd')?.addEventListener('click',()=>{
   saveExtras();
   document.getElementById('qIn').value='';document.getElementById('qCorrIn').value='';
   document.getElementById('qAssunto').value='';document.getElementById('qRevisar').checked=false;
+  closeQModal();
   renderEstudo();renderStudSummary();renderMissions();renderRevisoes();
   toast(revisar?'Registrado e agendado nas revisões':'Registro salvo');
 });
@@ -2071,6 +2138,7 @@ async function enter(){
   showApp();
   renderAll();
   switchTab('dashboard');
+  pomoRestore();
 }
 
 /* ============================ MODELO DE PLANO + ROTEIRO ============================ */
@@ -2137,7 +2205,7 @@ Responda o máximo que puder. Com isto, geramos seu plano em JSON para importar 
    linguagens, simulado, rotina, outro.`;
 
 /* ============================ BOOT ============================ */
-console.log('%cRota Med · layout v2.8 (assunto + revisões curva do esquecimento + rendimento por matéria)','color:#7C5CFF;font-weight:700;font-size:13px');
+console.log('%cRota Med · layout v2.9 (registrar-tempo no pomodoro · horas no dashboard · questões em modal · timer persistente + alarme)','color:#7C5CFF;font-weight:700;font-size:13px');
 (async function boot(){
   try{
     const cur=await authApi.current();
