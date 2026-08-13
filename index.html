@@ -513,6 +513,36 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
 .pf-head .pf-id .e{font-size:12.5px;color:var(--ink-faint);}
 .pf-photo-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
 .pf-section-t{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);font-weight:700;margin:4px 0 12px;}
+/* ==== questões: assunto + revisão + rendimento ==== */
+.qrev-check{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:12px 2px 2px;}
+.qrev-check input{position:absolute;opacity:0;width:0;height:0;}
+.qrev-box{width:20px;height:20px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;flex-shrink:0;transition:.15s;}
+.qrev-check input:checked+.qrev-box{background:var(--accent);border-color:var(--accent);}
+.qrev-check input:checked+.qrev-box::after{content:"";width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) translateY(-1px);}
+.qa-row{display:grid;grid-template-columns:120px 1fr 118px;align-items:center;gap:12px;padding:9px 0;}
+.qa-name{font-size:13px;font-weight:700;}
+.qa-track{height:9px;border-radius:100px;background:var(--surface-3);overflow:hidden;}
+.qa-track i{display:block;height:100%;border-radius:100px;transition:width .5s;}
+.qa-meta{font-size:11.5px;font-weight:700;color:var(--ink-soft);text-align:right;}
+.qa-empty{color:var(--ink-faint);font-size:13px;padding:16px 0;text-align:center;}
+/* revisões */
+.rv-item{display:flex;align-items:center;gap:14px;padding:14px 4px;border-bottom:1px solid var(--line);}
+.rv-item:last-child{border-bottom:none;}
+.rv-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.rv-main{flex:1;min-width:0;}
+.rv-t{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.rv-chip{font-size:9.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:2px 7px;border-radius:100px;}
+.rv-s{font-size:11.5px;color:var(--ink-faint);font-weight:600;margin-top:3px;}
+.rv-due{font-size:12px;font-weight:800;white-space:nowrap;}
+.rv-due.late{color:var(--red,#E5484D);}
+.rv-due.today{color:var(--accent);}
+.rv-due.soon{color:var(--ink-soft);}
+.rv-btn{border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.rv-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.rv-btn:hover{border-color:var(--accent);}
+.rv-x{color:var(--ink-faint);cursor:pointer;display:grid;place-items:center;}
+.rv-x:hover{color:var(--red,#E5484D);}
+.rv-group-h{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin:16px 0 4px;}
 </style>
 </head>
 <body data-theme="light">
@@ -676,12 +706,31 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
         <div class="stat"><div class="st-top"><span class="st-lab">Taxa de acerto</span><span class="st-ic" id="qIc3"></span></div><div class="st-v" id="qAcc">–</div><div class="st-sub">meta 70%+</div></div>
       </div>
       <div class="qform">
-        <div class="field" style="flex:1;min-width:120px;"><label>Resolvidas</label><input type="number" id="qIn" min="1" placeholder="ex: 30"></div>
-        <div class="field" style="flex:1;min-width:120px;"><label>Acertos</label><input type="number" id="qCorrIn" min="0" placeholder="ex: 22"></div>
+        <div class="field" style="flex:1;min-width:110px;"><label>Resolvidas</label><input type="number" id="qIn" min="1" placeholder="ex: 30"></div>
+        <div class="field" style="flex:1;min-width:110px;"><label>Acertos</label><input type="number" id="qCorrIn" min="0" placeholder="ex: 22"></div>
+        <div class="field" style="flex:1.4;min-width:150px;"><label>Assunto</label><input type="text" id="qAssunto" placeholder="ex: Termoquímica"></div>
         <select id="qArea" style="align-self:flex-end;"></select>
         <button class="mini-add" id="qAdd" style="align-self:flex-end;padding:11px 18px;">Registrar</button>
       </div>
+      <label class="qrev-check" id="qRevWrap"><input type="checkbox" id="qRevisar"><span class="qrev-box"></span><span>Projetar nas revisões <span style="color:var(--ink-faint);font-weight:500;">(agenda pela curva do esquecimento; deixe desmarcado se for só treino/fixação)</span></span></label>
       <div id="qHist" class="qhist"></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="eyebrow">Rendimento</span><h2>Aproveitamento por matéria</h2></div>
+      <div id="qByArea"></div>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="revisoes">
+    <div class="grid g-3" style="margin-bottom:14px;">
+      <div class="stat"><div class="st-top"><span class="st-lab">Atrasadas</span><span class="st-ic" id="rvIc1"></span></div><div class="st-v" id="rvLate">0</div><div class="st-sub">revisar quanto antes</div></div>
+      <div class="stat"><div class="st-top"><span class="st-lab">Para hoje</span><span class="st-ic" id="rvIc2"></span></div><div class="st-v" id="rvToday">0</div><div class="st-sub">no ponto ideal</div></div>
+      <div class="stat"><div class="st-top"><span class="st-lab">Agendadas</span><span class="st-ic" id="rvIc3"></span></div><div class="st-v" id="rvTotal">0</div><div class="st-sub">total pendente</div></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="eyebrow">Curva do esquecimento</span><h2>Revisões</h2></div>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:-4px 0 14px;">Cada bloco de questões marcado para revisar é reagendado pelo seu aproveitamento: <b>&lt;60% → 1 semana</b> · <b>até 80% → 2 semanas</b> · <b>acima de 80% → 1 mês</b>. Ao revisar, o intervalo aumenta.</p>
+      <div id="rvList"></div>
     </div>
   </section>
 
@@ -1063,6 +1112,7 @@ const ICONS={
   moon:'<path d="M20 14A8 8 0 019.3 3.3 7 7 0 1020.7 14.7z"/>',
   edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/>',
   book:'<path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M19 3v18"/>',
+  refresh:'<path d="M3 12a9 9 0 019-9 9 9 0 016.7 3H21m0-3v3.5h-3.5"/><path d="M21 12a9 9 0 01-9 9 9 9 0 01-6.7-3H3m0 3v-3.5h3.5"/>',
   grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   external:'<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/>'
 };
@@ -1109,7 +1159,7 @@ function fmtBR(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return `${d}/${
 function examDate(){return PLAN&&PLAN.examDate?new Date(PLAN.examDate+'T08:00:00'):null;}
 
 /* ============================ TABS ============================ */
-const BASE_TABS=[['dashboard','Início','home'],['metas','Metas','target'],['progresso','Progresso','chart'],['semanal','Semana','calendar'],['sprints','Sprints','zap'],['estudo','Estudo','clock'],['apps','Apps','grid']];
+const BASE_TABS=[['dashboard','Início','home'],['metas','Metas','target'],['progresso','Progresso','chart'],['semanal','Semana','calendar'],['sprints','Sprints','zap'],['estudo','Estudo','clock'],['revisoes','Revisões','refresh'],['apps','Apps','grid']];
 function tabsFor(){return BASE_TABS.slice();}
 function renderTabs(){
   const tabs=tabsFor();
@@ -1502,7 +1552,8 @@ let EXTRAS={};
 function loadExtras(){
   EXTRAS=(scoreLog && typeof scoreLog.__extras==='object' && scoreLog.__extras)?scoreLog.__extras:{};
   EXTRAS.study=EXTRAS.study||{};        // { "2026-08-06": {min, sess} }
-  EXTRAS.questions=EXTRAS.questions||[]; // [{date,total,correct,area}]
+  EXTRAS.questions=EXTRAS.questions||[]; // [{date,total,correct,area,assunto}]
+  EXTRAS.revisoes=EXTRAS.revisoes||[]; // [{id,area,assunto,acc,stage,due,base}]
   EXTRAS.avatar=EXTRAS.avatar||null;     // dataURL
   EXTRAS.redacao=EXTRAS.redacao||[];     // [{date,score}]
   EXTRAS.simulado=EXTRAS.simulado||[];   // [{date,score}]
@@ -1626,7 +1677,14 @@ function renderEstudo(){
   if(qt){qt.textContent=q.total;document.getElementById('qCorrect').textContent=q.correct;document.getElementById('qAcc').textContent=q.acc!==null?q.acc+'%':'–';document.getElementById('qSess').textContent=EXTRAS.questions.length+' registros';}
   const qa=document.getElementById('qArea'); if(qa && !qa.dataset.f){qa.innerHTML=Object.keys(AREA_LABELS).map(a=>`<option value="${a}">${AREA_LABELS[a]}</option>`).join('');qa.value='fisica';qa.dataset.f='1';}
   const hist=document.getElementById('qHist');
-  if(hist)hist.innerHTML=EXTRAS.questions.slice(-6).reverse().map(x=>{const acc=x.total?Math.round(x.correct/x.total*100):0;const col=acc>=70?'var(--green)':acc>=50?'var(--amber)':'var(--red)';return `<div class="qrow"><span><span class="chip chip-${x.area||'outro'}">${AREA_LABELS[x.area]||'Geral'}</span> ${x.correct}/${x.total} <span class="qr-date">· ${fmtBR(x.date)}</span></span><span class="qr-acc" style="color:${col}">${acc}%</span></div>`;}).join('')||'<div class="empty" style="padding:8px 0;">Nenhum registro ainda. Some questões pra ver sua taxa de acerto evoluir.</div>';
+  if(hist)hist.innerHTML=EXTRAS.questions.slice(-6).reverse().map(x=>{const acc=x.total?Math.round(x.correct/x.total*100):0;const col=acc>=70?'var(--green)':acc>=50?'var(--amber)':'var(--red)';return `<div class="qrow"><span><span class="chip chip-${x.area||'outro'}">${AREA_LABELS[x.area]||'Geral'}</span> ${x.correct}/${x.total}${x.assunto?` · ${x.assunto}`:''} <span class="qr-date">· ${fmtBR(x.date)}</span></span><span class="qr-acc" style="color:${col}">${acc}%</span></div>`;}).join('')||'<div class="empty" style="padding:8px 0;">Nenhum registro ainda. Some questões pra ver sua taxa de acerto evoluir.</div>';
+  const qba=document.getElementById('qByArea');
+  if(qba){
+    const agg={};
+    (EXTRAS.questions||[]).forEach(x=>{const a=x.area||'outro';agg[a]=agg[a]||{t:0,c:0};agg[a].t+=x.total||0;agg[a].c+=x.correct||0;});
+    const keys=Object.keys(agg).sort((a,b)=>agg[b].t-agg[a].t);
+    qba.innerHTML=keys.length?keys.map(a=>{const acc=agg[a].t?Math.round(agg[a].c/agg[a].t*100):0;const col=acc>=70?'var(--green)':acc>=50?'var(--amber)':'var(--red)';return `<div class="qa-row"><div class="qa-name"><span class="chip chip-${a}">${AREA_LABELS[a]||a}</span></div><div class="qa-track"><i style="width:${acc}%;background:${col}"></i></div><div class="qa-meta">${acc}% · ${agg[a].c}/${agg[a].t}</div></div>`;}).join(''):'<div class="qa-empty">Registre questões por matéria para ver seu aproveitamento aqui.</div>';
+  }
 }
 
 /* bindings do Pomodoro flutuante + Estudo */
@@ -1649,12 +1707,64 @@ document.getElementById('qAdd')?.addEventListener('click',()=>{
   const total=parseInt(document.getElementById('qIn').value);
   const correct=parseInt(document.getElementById('qCorrIn').value);
   const area=document.getElementById('qArea').value;
+  const assunto=(document.getElementById('qAssunto').value||'').trim();
+  const revisar=document.getElementById('qRevisar').checked;
   if(!total||total<=0){toast('Quantas questões você resolveu?');return;}
   const corr=isNaN(correct)?0:Math.min(correct,total);
-  EXTRAS.questions.push({date:todayISO(),total,correct:corr,area});saveExtras();
+  const acc=Math.round(corr/total*100);
+  EXTRAS.questions.push({date:todayISO(),total,correct:corr,area,assunto});
+  if(revisar) scheduleRevisao({area,assunto,acc,base:todayISO()});
+  saveExtras();
   document.getElementById('qIn').value='';document.getElementById('qCorrIn').value='';
-  renderEstudo();renderStudSummary();renderMissions();toast('Registro salvo');
+  document.getElementById('qAssunto').value='';document.getElementById('qRevisar').checked=false;
+  renderEstudo();renderStudSummary();renderMissions();renderRevisoes();
+  toast(revisar?'Registrado e agendado nas revisões':'Registro salvo');
 });
+/* ---- REVISÕES (curva do esquecimento) ---- */
+const RV_LADDER=[7,14,30,60,120]; // dias
+function startStage(acc){return acc<60?0:acc<=80?1:2;} // <60→7d · ≤80→14d · >80→30d
+function addDaysISO(iso,days){const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+days);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function scheduleRevisao({area,assunto,acc,base}){
+  const stage=startStage(acc);
+  EXTRAS.revisoes.push({id:'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),area,assunto:assunto||'(sem assunto)',acc,stage,due:addDaysISO(base,RV_LADDER[stage]),base});
+}
+function revisarAgora(id){
+  const r=(EXTRAS.revisoes||[]).find(x=>x.id===id); if(!r)return;
+  if(r.stage>=RV_LADDER.length-1){ EXTRAS.revisoes=EXTRAS.revisoes.filter(x=>x.id!==id); saveExtras(); renderRevisoes(); toast('Revisão dominada — fora da fila ✓'); return; }
+  r.stage++; r.due=addDaysISO(todayISO(),RV_LADDER[r.stage]); saveExtras(); renderRevisoes();
+  toast('Revisado! Próxima em '+RV_LADDER[r.stage]+' dias');
+}
+function renderRevisoes(){
+  const list=document.getElementById('rvList'); if(!list)return;
+  const setIc=(id,n)=>{const e=document.getElementById(id);if(e)e.innerHTML=svg(n);};
+  setIc('rvIc1','flame');setIc('rvIc2','target');setIc('rvIc3','refresh');
+  const today=todayISO();
+  const items=[...(EXTRAS.revisoes||[])].sort((a,b)=>a.due<b.due?-1:1);
+  const late=items.filter(r=>r.due<today), now=items.filter(r=>r.due===today), soon=items.filter(r=>r.due>today);
+  const lc=document.getElementById('rvLate'), tc=document.getElementById('rvToday'), ac=document.getElementById('rvTotal');
+  if(lc)lc.textContent=late.length; if(tc)tc.textContent=now.length; if(ac)ac.textContent=items.length;
+  if(!items.length){list.innerHTML='<div class="qa-empty">Nenhuma revisão agendada. Marque “Projetar nas revisões” ao registrar um bloco de questões.</div>';return;}
+  const row=r=>{
+    const col=AREA_COLOR[r.area]||'var(--accent)';
+    const overdue=r.due<today, istoday=r.due===today;
+    const dd=new Date(r.due+'T12:00:00'); const diff=Math.round((dd-new Date(today+'T12:00:00'))/86400000);
+    const when=overdue?`atrasada ${Math.abs(diff)}d`:istoday?'hoje':(diff===1?'amanhã':`em ${diff}d`);
+    const cls=overdue?'late':istoday?'today':'soon';
+    return `<div class="rv-item"><span class="rv-dot" style="background:${col}"></span>
+      <div class="rv-main"><div class="rv-t"><span class="rv-chip" style="background:${col}22;color:${col}">${AREA_LABELS[r.area]||r.area}</span>${r.assunto}</div>
+        <div class="rv-s">aproveitamento ${r.acc}% · intervalo atual ${RV_LADDER[r.stage]}d · ${fmtBR(r.due)}</div></div>
+      <span class="rv-due ${cls}">${when}</span>
+      <button class="rv-btn primary" data-rv="${r.id}">Revisei</button>
+      <span class="rv-x" data-rvx="${r.id}" title="Remover">${svg('x')}</span></div>`;
+  };
+  let html='';
+  if(late.length)html+=`<div class="rv-group-h">Atrasadas</div>`+late.map(row).join('');
+  if(now.length)html+=`<div class="rv-group-h">Para hoje</div>`+now.map(row).join('');
+  if(soon.length)html+=`<div class="rv-group-h">Próximas</div>`+soon.map(row).join('');
+  list.innerHTML=html;
+  list.querySelectorAll('[data-rv]').forEach(b=>b.addEventListener('click',()=>revisarAgora(b.dataset.rv)));
+  list.querySelectorAll('[data-rvx]').forEach(b=>b.addEventListener('click',()=>{EXTRAS.revisoes=EXTRAS.revisoes.filter(x=>x.id!==b.dataset.rvx);saveExtras();renderRevisoes();}));
+}
 
 /* ---- FOTO DE PERFIL ---- */
 function applyAvatar(){
@@ -1929,6 +2039,7 @@ function renderAll(){
   renderSemanal();
   renderJourney();
   renderEstudo();
+  renderRevisoes();
   renderApps();
   renderEvo();
   renderPerfil();
@@ -2026,7 +2137,7 @@ Responda o máximo que puder. Com isto, geramos seu plano em JSON para importar 
    linguagens, simulado, rotina, outro.`;
 
 /* ============================ BOOT ============================ */
-console.log('%cRota Med · layout v2.7 (pomodoro relógio-real + título da aba)','color:#7C5CFF;font-weight:700;font-size:13px');
+console.log('%cRota Med · layout v2.8 (assunto + revisões curva do esquecimento + rendimento por matéria)','color:#7C5CFF;font-weight:700;font-size:13px');
 (async function boot(){
   try{
     const cur=await authApi.current();
