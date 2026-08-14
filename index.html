@@ -550,6 +550,12 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
 .pp-manual button{border:none;border-radius:9px;padding:0 13px;background:var(--accent);color:#fff;font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap;}
 .pp-stopalarm{width:100%;margin-top:10px;border:none;border-radius:10px;padding:11px;background:var(--red,#E5484D);color:#fff;font-weight:800;font-size:13px;cursor:pointer;animation:alarmpulse 1s infinite;}
 @keyframes alarmpulse{0%,100%{opacity:1}50%{opacity:.55}}
+.qrow .qr-acts{display:flex;align-items:center;gap:8px;margin-left:6px;}
+.qrow .qr-act{color:var(--ink-faint);cursor:pointer;display:grid;place-items:center;}
+.qrow .qr-act:hover{color:var(--accent);}
+.qrow .qr-act.del:hover{color:var(--red,#E5484D);}
+.qrow .qr-act svg{width:15px;height:15px;}
+.qrow .qr-main{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap;}
 </style>
 </head>
 <body data-theme="light">
@@ -700,13 +706,12 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
 
   <section class="panel" data-panel="estudo">
     <div class="card">
-      <div class="card-h" style="display:flex;align-items:center;justify-content:space-between;"><div><span class="eyebrow">Desempenho</span><h2>Questões resolvidas</h2></div><button class="btn-primary" id="openQModal" style="width:auto;padding:10px 16px;">Registrar questões</button></div>
-      <div class="grid g-3" style="margin:6px 0 4px;">
+      <div class="card-h" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;"><div><span class="eyebrow">Desempenho</span><h2>Questões resolvidas</h2></div><div style="display:flex;gap:8px;"><button class="btn-line" id="openHistModal" style="width:auto;padding:10px 16px;">Histórico</button><button class="btn-primary" id="openQModal" style="width:auto;padding:10px 16px;">Registrar questões</button></div></div>
+      <div class="grid g-3" style="margin:6px 0 0;">
         <div class="stat"><div class="st-top"><span class="st-lab">Resolvidas</span><span class="st-ic" id="qIc1"></span></div><div class="st-v" id="qTotal">0</div><div class="st-sub" id="qSess">0 registros</div></div>
         <div class="stat"><div class="st-top"><span class="st-lab">Acertos</span><span class="st-ic" id="qIc2"></span></div><div class="st-v" id="qCorrect">0</div><div class="st-sub">acumulado</div></div>
         <div class="stat"><div class="st-top"><span class="st-lab">Taxa de acerto</span><span class="st-ic" id="qIc3"></span></div><div class="st-v" id="qAcc">–</div><div class="st-sub">meta 70%+</div></div>
       </div>
-      <div id="qHist" class="qhist"></div>
     </div>
     <div class="card">
       <div class="card-h"><span class="eyebrow">Rendimento</span><h2>Aproveitamento por matéria</h2></div>
@@ -795,7 +800,7 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
 
 <div class="modal-ov" id="qModal">
   <div class="modal" style="max-width:460px;">
-    <div class="modal-h"><div class="mh-l"><div class="t">Registrar questões</div><div class="s">Resultado de um bloco de questões</div></div><button class="modal-x" id="qmClose">✕</button></div>
+    <div class="modal-h"><div class="mh-l"><div class="t" id="qmTitle">Registrar questões</div><div class="s" id="qmSub">Resultado de um bloco de questões</div></div><button class="modal-x" id="qmClose">✕</button></div>
     <div class="modal-b"><div class="mform">
       <div style="display:flex;gap:10px;"><div style="flex:1;"><label>Resolvidas</label><input type="number" id="qIn" min="1" placeholder="ex: 30"></div><div style="flex:1;"><label>Acertos</label><input type="number" id="qCorrIn" min="0" placeholder="ex: 22"></div></div>
       <div><label>Assunto</label><input type="text" id="qAssunto" placeholder="ex: Termoquímica"></div>
@@ -803,6 +808,13 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
       <label class="qrev-check" id="qRevWrap"><input type="checkbox" id="qRevisar"><span class="qrev-box"></span><span>Projetar nas revisões <span style="color:var(--ink-faint);font-weight:500;">(agenda pela curva do esquecimento; deixe desmarcado se for só treino/fixação)</span></span></label>
       <div class="mform-actions"><button class="btn-primary" id="qAdd">Registrar</button><button class="btn-line" id="qmCancel">Cancelar</button></div>
     </div></div>
+  </div>
+</div>
+
+<div class="modal-ov" id="histModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-h"><div class="mh-l"><div class="t">Histórico de questões</div><div class="s" id="histSub">Todos os registros</div></div><button class="modal-x" id="histClose">✕</button></div>
+    <div class="modal-b"><div id="histList" class="qhist" style="max-height:60vh;overflow:auto;"></div></div>
   </div>
 </div>
 
@@ -1728,8 +1740,6 @@ function renderEstudo(){
   const q=qTotals(); const qt=document.getElementById('qTotal');
   if(qt){qt.textContent=q.total;document.getElementById('qCorrect').textContent=q.correct;document.getElementById('qAcc').textContent=q.acc!==null?q.acc+'%':'–';document.getElementById('qSess').textContent=EXTRAS.questions.length+' registros';}
   const qa=document.getElementById('qArea'); if(qa && !qa.dataset.f){qa.innerHTML=Object.keys(AREA_LABELS).map(a=>`<option value="${a}">${AREA_LABELS[a]}</option>`).join('');qa.value='fisica';qa.dataset.f='1';}
-  const hist=document.getElementById('qHist');
-  if(hist)hist.innerHTML=EXTRAS.questions.slice(-6).reverse().map(x=>{const acc=x.total?Math.round(x.correct/x.total*100):0;const col=acc>=70?'var(--green)':acc>=50?'var(--amber)':'var(--red)';return `<div class="qrow"><span><span class="chip chip-${x.area||'outro'}">${AREA_LABELS[x.area]||'Geral'}</span> ${x.correct}/${x.total}${x.assunto?` · ${x.assunto}`:''} <span class="qr-date">· ${fmtBR(x.date)}</span></span><span class="qr-acc" style="color:${col}">${acc}%</span></div>`;}).join('')||'<div class="empty" style="padding:8px 0;">Nenhum registro ainda. Some questões pra ver sua taxa de acerto evoluir.</div>';
   const qba=document.getElementById('qByArea');
   if(qba){
     const agg={};
@@ -1737,6 +1747,27 @@ function renderEstudo(){
     const keys=Object.keys(agg).sort((a,b)=>agg[b].t-agg[a].t);
     qba.innerHTML=keys.length?keys.map(a=>{const acc=agg[a].t?Math.round(agg[a].c/agg[a].t*100):0;const col=acc>=70?'var(--green)':acc>=50?'var(--amber)':'var(--red)';return `<div class="qa-row"><div class="qa-name"><span class="chip chip-${a}">${AREA_LABELS[a]||a}</span></div><div class="qa-track"><i style="width:${acc}%;background:${col}"></i></div><div class="qa-meta">${acc}% · ${agg[a].c}/${agg[a].t}</div></div>`;}).join(''):'<div class="qa-empty">Registre questões por matéria para ver seu aproveitamento aqui.</div>';
   }
+}
+/* ---- HISTÓRICO de questões (editar/remover) ---- */
+function openHistModal(){renderHistModal();document.getElementById('histModal').classList.add('show');}
+function closeHistModal(){document.getElementById('histModal').classList.remove('show');}
+function renderHistModal(){
+  const list=document.getElementById('histList'); if(!list)return;
+  const sub=document.getElementById('histSub'); if(sub)sub.textContent=(EXTRAS.questions.length||0)+' registros';
+  const qs=EXTRAS.questions;
+  if(!qs.length){list.innerHTML='<div class="empty" style="padding:12px 0;">Nenhum registro ainda.</div>';return;}
+  list.innerHTML=qs.map((x,i)=>i).reverse().map(i=>{
+    const x=qs[i]; const acc=x.total?Math.round(x.correct/x.total*100):0;
+    const col=acc>=70?'var(--green)':acc>=50?'var(--amber)':'var(--red)';
+    return `<div class="qrow"><span class="qr-main"><span class="chip chip-${x.area||'outro'}">${AREA_LABELS[x.area]||'Geral'}</span> ${x.correct}/${x.total}${x.assunto?` · ${x.assunto}`:''} <span class="qr-date">· ${fmtBR(x.date)}</span></span><span style="display:flex;align-items:center;gap:12px;"><span class="qr-acc" style="color:${col}">${acc}%</span><span class="qr-acts"><span class="qr-act" data-qedit="${i}" title="Editar">${svg('edit')}</span><span class="qr-act del" data-qdel="${i}" title="Remover">${svg('x')}</span></span></span></div>`;
+  }).join('');
+  list.querySelectorAll('[data-qedit]').forEach(b=>b.addEventListener('click',()=>{closeHistModal();openQModal(parseInt(b.dataset.qedit));}));
+  list.querySelectorAll('[data-qdel]').forEach(b=>b.addEventListener('click',()=>{
+    const i=parseInt(b.dataset.qdel);
+    EXTRAS.questions.splice(i,1);saveExtras();
+    renderHistModal();renderEstudo();renderStudSummary();renderMissions();renderDashboard();
+    toast('Registro removido');
+  }));
 }
 
 /* bindings do Pomodoro flutuante + Estudo */
@@ -1759,16 +1790,37 @@ document.getElementById('pfManualAdd')?.addEventListener('click',e=>{
 document.getElementById('pfManual')?.addEventListener('click',e=>e.stopPropagation());
 document.getElementById('pfManual')?.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')document.getElementById('pfManualAdd').click();});
 /* ---- MODAL DE QUESTÕES ---- */
-function openQModal(){
+let qEditIdx=null;
+function openQModal(idx){
   const qa=document.getElementById('qArea'); if(qa && !qa.dataset.f){qa.innerHTML=Object.keys(AREA_LABELS).map(a=>`<option value="${a}">${AREA_LABELS[a]}</option>`).join('');qa.value='fisica';qa.dataset.f='1';}
+  qEditIdx=(typeof idx==='number')?idx:null;
+  const editing=qEditIdx!==null;
+  document.getElementById('qmTitle').textContent=editing?'Editar registro':'Registrar questões';
+  document.getElementById('qmSub').textContent=editing?'Corrija os dados deste bloco':'Resultado de um bloco de questões';
+  document.getElementById('qAdd').textContent=editing?'Salvar':'Registrar';
+  document.getElementById('qRevWrap').style.display=editing?'none':'flex';
+  if(editing){
+    const x=EXTRAS.questions[qEditIdx]||{};
+    document.getElementById('qIn').value=x.total||'';
+    document.getElementById('qCorrIn').value=x.correct||0;
+    document.getElementById('qAssunto').value=x.assunto||'';
+    document.getElementById('qArea').value=x.area||'fisica';
+    document.getElementById('qRevisar').checked=false;
+  }else{
+    document.getElementById('qIn').value='';document.getElementById('qCorrIn').value='';
+    document.getElementById('qAssunto').value='';document.getElementById('qRevisar').checked=false;
+  }
   document.getElementById('qModal').classList.add('show');
   setTimeout(()=>document.getElementById('qIn').focus(),50);
 }
-function closeQModal(){document.getElementById('qModal').classList.remove('show');}
-document.getElementById('openQModal')?.addEventListener('click',openQModal);
+function closeQModal(){qEditIdx=null;document.getElementById('qModal').classList.remove('show');}
+document.getElementById('openQModal')?.addEventListener('click',()=>openQModal());
 document.getElementById('qmClose')?.addEventListener('click',closeQModal);
 document.getElementById('qmCancel')?.addEventListener('click',closeQModal);
 document.getElementById('qModal')?.addEventListener('click',e=>{if(e.target.id==='qModal')closeQModal();});
+document.getElementById('openHistModal')?.addEventListener('click',openHistModal);
+document.getElementById('histClose')?.addEventListener('click',closeHistModal);
+document.getElementById('histModal')?.addEventListener('click',e=>{if(e.target.id==='histModal')closeHistModal();});
 document.getElementById('qAdd')?.addEventListener('click',()=>{
   const total=parseInt(document.getElementById('qIn').value);
   const correct=parseInt(document.getElementById('qCorrIn').value);
@@ -1778,13 +1830,19 @@ document.getElementById('qAdd')?.addEventListener('click',()=>{
   if(!total||total<=0){toast('Quantas questões você resolveu?');return;}
   const corr=isNaN(correct)?0:Math.min(correct,total);
   const acc=Math.round(corr/total*100);
+  if(qEditIdx!==null && EXTRAS.questions[qEditIdx]){
+    const x=EXTRAS.questions[qEditIdx];
+    x.total=total;x.correct=corr;x.area=area;x.assunto=assunto;
+    saveExtras();closeQModal();
+    renderEstudo();renderStudSummary();renderMissions();renderDashboard();
+    if(document.getElementById('histModal').classList.contains('show'))renderHistModal();
+    toast('Registro atualizado');return;
+  }
   EXTRAS.questions.push({date:todayISO(),total,correct:corr,area,assunto});
   if(revisar) scheduleRevisao({area,assunto,acc,base:todayISO()});
   saveExtras();
-  document.getElementById('qIn').value='';document.getElementById('qCorrIn').value='';
-  document.getElementById('qAssunto').value='';document.getElementById('qRevisar').checked=false;
   closeQModal();
-  renderEstudo();renderStudSummary();renderMissions();renderRevisoes();
+  renderEstudo();renderStudSummary();renderMissions();renderRevisoes();renderDashboard();
   toast(revisar?'Registrado e agendado nas revisões':'Registro salvo');
 });
 /* ---- REVISÕES (curva do esquecimento) ---- */
@@ -2205,7 +2263,7 @@ Responda o máximo que puder. Com isto, geramos seu plano em JSON para importar 
    linguagens, simulado, rotina, outro.`;
 
 /* ============================ BOOT ============================ */
-console.log('%cRota Med · layout v2.9 (registrar-tempo no pomodoro · horas no dashboard · questões em modal · timer persistente + alarme)','color:#7C5CFF;font-weight:700;font-size:13px');
+console.log('%cRota Med · layout v3.0 (histórico de questões: editar + remover)','color:#7C5CFF;font-weight:700;font-size:13px');
 (async function boot(){
   try{
     const cur=await authApi.current();
