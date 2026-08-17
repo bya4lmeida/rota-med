@@ -1116,13 +1116,19 @@ async function cloudSave() {
     if (savePending) { savePending = false; queueCloudSave(); }
   }
 }
-/* restaura um backup (arquivo .json) para a conta atual */
+/* restaura um backup (arquivo .json) para a conta atual — MESCLA, não apaga o que já existe */
 function restoreBackup(obj){
   if(!obj || planIsEmpty(obj.plan)){toast('Backup inválido ou sem plano.');return;}
-  CLOUD_DATA.plan=obj.plan; CLOUD_DATA.status=obj.status||{}; CLOUD_DATA.log=obj.log||{}; CLOUD_DATA.scores=obj.scores||{};
+  CLOUD_DATA.plan=obj.plan;
+  CLOUD_DATA.status=Object.assign({},CLOUD_DATA.status||{},obj.status||{});
+  CLOUD_DATA.log=Object.assign({},CLOUD_DATA.log||{},obj.log||{});
+  // scores: mescla topo + deep-merge do __extras (preserva avatar/apps/sex atuais se o backup não trouxer)
+  const curScores=CLOUD_DATA.scores||{}, inScores=obj.scores||{};
+  const merged=Object.assign({},curScores,inScores);
+  merged.__extras=Object.assign({},curScores.__extras||{},inScores.__extras||{});
+  CLOUD_DATA.scores=merged;
   PLAN=CLOUD_DATA.plan; statusMap=CLOUD_DATA.status; completionLog=CLOUD_DATA.log; scoreLog=CLOUD_DATA.scores;
   dataLoaded=true; hadPlanAtLoad=true;
-  // grava no Supabase da conta atual
   ['plan','status','log','scores'].forEach(k=>{LS.set(uk(k),CLOUD_DATA[k]);}); queueCloudSave();
   loadExtras(); buildFromPlan(); renderAll();
   toast('Backup restaurado nesta conta.');
@@ -2330,7 +2336,7 @@ Responda o máximo que puder. Com isto, geramos seu plano em JSON para importar 
    linguagens, simulado, rotina, outro.`;
 
 /* ============================ BOOT ============================ */
-console.log('%cRota Med · layout v3.1 (proteção anti-perda: trava de save + backup automático e manual)','color:#7C5CFF;font-weight:700;font-size:13px');
+console.log('%cRota Med · layout v3.2 (proteção anti-perda + restore que mescla sem apagar foto/apps)','color:#7C5CFF;font-weight:700;font-size:13px');
 (async function boot(){
   try{
     const cur=await authApi.current();
