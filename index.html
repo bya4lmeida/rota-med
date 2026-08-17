@@ -768,6 +768,13 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
       <textarea class="code" id="planPaste" placeholder="Cole aqui o JSON do plano..."></textarea>
       <div style="margin-top:10px;"><button class="btn-primary" style="max-width:220px;" id="importPasteBtn">Importar do texto</button></div>
     </div>
+    <div class="card"><div class="card-h"><span class="eyebrow">Segurança</span><h2>Backup completo</h2></div>
+      <p style="font-size:13px;color:var(--ink-soft);margin-top:0;">Baixa <b>tudo</b> num arquivo: plano, tarefas concluídas, horas e questões. Guarde de vez em quando — e restaure aqui se precisar. O app também guarda uma cópia local automática a cada salvamento.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn-primary" style="max-width:240px;" id="backupBtn">Baixar backup completo</button>
+        <label class="btn-line" style="cursor:pointer;">Restaurar backup<input type="file" id="backupFile" accept=".json,application/json" class="hidden"></label>
+      </div>
+    </div>
   </section>
 
   <section class="panel" data-panel="admin">
@@ -1044,6 +1051,12 @@ function queueCloudSave() {
   }, 250);
 }
 
+let dataLoaded=false;      // só permite salvar depois de um load bem-sucedido
+let hadPlanAtLoad=false;   // havia plano quando carregou? (trava anti-apagamento)
+function planIsEmpty(p){return !p || (typeof p==='object' && !p.student && !(Array.isArray(p.phases)&&p.phases.length));}
+function fullState(){return {plan:CLOUD_DATA.plan,status:CLOUD_DATA.status,log:CLOUD_DATA.log,scores:CLOUD_DATA.scores,savedAt:new Date().toISOString(),user:ME?.id||null,email:ME?.email||null};}
+function writeLocalBackup(){try{const s=JSON.stringify(fullState());localStorage.setItem('rm:lastgood:'+(ME?.id||'x'),s);localStorage.setItem('rm:lastgood:latest',s);}catch(e){}}
+
 async function cloudLoad() {
   if (!ME?.id) return;
 
@@ -1061,13 +1074,23 @@ async function cloudLoad() {
     log: data?.log || {},
     scores: data?.scores || {}
   };
+  hadPlanAtLoad = !planIsEmpty(CLOUD_DATA.plan);
+  dataLoaded = true; // a partir daqui é seguro salvar
 
   // Cache local apenas como fallback visual.
   Object.entries(CLOUD_DATA).forEach(([k, v]) => LS.set(uk(k), v));
+  if(!planIsEmpty(CLOUD_DATA.plan)) writeLocalBackup(); // guarda o último estado bom
 }
 
 async function cloudSave() {
   if (!ME?.id) return;
+  // TRAVA 1: nunca salvar antes de um carregamento confirmado (evita gravar vazio por cima da nuvem)
+  if (!dataLoaded) { console.warn('[Rota Med] Save bloqueado: dados ainda não carregados.'); return; }
+  // TRAVA 2: nunca apagar um plano que já existia gravando vazio por cima
+  if (hadPlanAtLoad && planIsEmpty(CLOUD_DATA.plan)) {
+    console.warn('[Rota Med] Save bloqueado: impedida a tentativa de apagar o plano existente.');
+    return;
+  }
   if (saveInFlight) { savePending = true; return; }
 
   saveInFlight = true;
@@ -1087,10 +1110,28 @@ async function cloudSave() {
       .upsert(payload, { onConflict: 'user_id' });
 
     if (error) throw error;
+    if (!planIsEmpty(CLOUD_DATA.plan)) { hadPlanAtLoad = true; writeLocalBackup(); }
   } finally {
     saveInFlight = false;
     if (savePending) { savePending = false; queueCloudSave(); }
   }
+}
+/* restaura um backup (arquivo .json) para a conta atual */
+function restoreBackup(obj){
+  if(!obj || planIsEmpty(obj.plan)){toast('Backup inválido ou sem plano.');return;}
+  CLOUD_DATA.plan=obj.plan; CLOUD_DATA.status=obj.status||{}; CLOUD_DATA.log=obj.log||{}; CLOUD_DATA.scores=obj.scores||{};
+  PLAN=CLOUD_DATA.plan; statusMap=CLOUD_DATA.status; completionLog=CLOUD_DATA.log; scoreLog=CLOUD_DATA.scores;
+  dataLoaded=true; hadPlanAtLoad=true;
+  // grava no Supabase da conta atual
+  ['plan','status','log','scores'].forEach(k=>{LS.set(uk(k),CLOUD_DATA[k]);}); queueCloudSave();
+  loadExtras(); buildFromPlan(); renderAll();
+  toast('Backup restaurado nesta conta.');
+}
+function downloadBackup(){
+  if(planIsEmpty(CLOUD_DATA.plan)){toast('Não há plano para salvar ainda.');return;}
+  const blob=new Blob([JSON.stringify(fullState(),null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup-rotamed-'+todayISO()+'.json';a.click();
+  toast('Backup baixado.');
 }
 // flush pendências ao sair/trocar de aba (best-effort, evita perder progresso)
 window.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')cloudSave().catch(()=>{});});
@@ -2099,6 +2140,8 @@ function importText(txt){
 document.getElementById('importPasteBtn').addEventListener('click',()=>{const t=document.getElementById('planPaste').value.trim();if(!t){toast('Cole o JSON primeiro.');return;}importText(t);});
 document.getElementById('planFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>importText(r.result);r.readAsText(f);});
 document.getElementById('exportBtn').addEventListener('click',()=>{if(!PLAN){toast('Nada para exportar.');return;}const blob=new Blob([JSON.stringify(PLAN,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='meu-plano-rota-med.json';a.click();toast('Plano exportado.');});
+document.getElementById('backupBtn')?.addEventListener('click',downloadBackup);
+document.getElementById('backupFile')?.addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{restoreBackup(JSON.parse(r.result));}catch(err){toast('Arquivo inválido.');}};r.readAsText(f);e.target.value='';});
 document.getElementById('modelBtn').addEventListener('click',()=>{document.getElementById('planPaste').value=JSON.stringify(MODEL_PLAN,null,2);toast('Modelo colado no campo. Edite e importe.');});
 document.getElementById('emptyImportBtn').addEventListener('click',()=>switchTab('perfil'));
 document.getElementById('copyReqBtn').addEventListener('click',()=>{navigator.clipboard?.writeText(REQ_REPORT).then(()=>toast('Roteiro copiado!'),()=>toast('Selecione e copie manualmente.'));});
@@ -2145,15 +2188,39 @@ document.getElementById('signupBtn').addEventListener('click',async()=>{
 );
 
 async function loadUserData(){
-  await cloudLoad();
+  try{
+    await cloudLoad();
+  }catch(e){
+    console.error('[Rota Med] Falha ao carregar da nuvem:',e);
+    dataLoaded=false; // mantém saves BLOQUEADOS — nunca grava vazio por cima
+    // leitura só do cache local (não marca como carregado, não salva)
+    CLOUD_DATA={plan:LS.get(uk('plan'))||null,status:LS.get(uk('status'))||{},log:LS.get(uk('log'))||{},scores:LS.get(uk('scores'))||{}};
+    setTimeout(()=>toast('Não consegui carregar da nuvem agora. Nada foi salvo por cima — recarregue a página (Ctrl+Shift+R).'),500);
+  }
 
   PLAN=CLOUD_DATA.plan;
   statusMap=CLOUD_DATA.status||{};
   completionLog=CLOUD_DATA.log||{};
   scoreLog=CLOUD_DATA.scores||{};
 
+  maybeRecoverFromLocalBackup();
+
   loadExtras();
   buildFromPlan();
+}
+// se a nuvem veio vazia mas há um backup local bom DESTA conta, recupera automaticamente
+function maybeRecoverFromLocalBackup(){
+  if(!dataLoaded) return;                 // se nem carregou, não mexe
+  if(!planIsEmpty(CLOUD_DATA.plan)) return;
+  let bk=null; try{bk=JSON.parse(localStorage.getItem('rm:lastgood:'+ME.id)||'null');}catch(e){}
+  if(bk && !planIsEmpty(bk.plan)){
+    CLOUD_DATA.plan=bk.plan;CLOUD_DATA.status=bk.status||{};CLOUD_DATA.log=bk.log||{};CLOUD_DATA.scores=bk.scores||{};
+    PLAN=CLOUD_DATA.plan;statusMap=CLOUD_DATA.status;completionLog=CLOUD_DATA.log;scoreLog=CLOUD_DATA.scores;
+    hadPlanAtLoad=true;
+    ['plan','status','log','scores'].forEach(k=>LS.set(uk(k),CLOUD_DATA[k]));
+    queueCloudSave();
+    setTimeout(()=>toast('Recuperei seu progresso do backup local desta conta.'),700);
+  }
 }
 
 function renderAll(){
@@ -2263,7 +2330,7 @@ Responda o máximo que puder. Com isto, geramos seu plano em JSON para importar 
    linguagens, simulado, rotina, outro.`;
 
 /* ============================ BOOT ============================ */
-console.log('%cRota Med · layout v3.0 (histórico de questões: editar + remover)','color:#7C5CFF;font-weight:700;font-size:13px');
+console.log('%cRota Med · layout v3.1 (proteção anti-perda: trava de save + backup automático e manual)','color:#7C5CFF;font-weight:700;font-size:13px');
 (async function boot(){
   try{
     const cur=await authApi.current();
