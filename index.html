@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 :root{
   --accent:#7C5CFF;--accent-2:#6A4BF2;--accent-weak:#F0ECFF;
@@ -556,6 +557,47 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
 .qrow .qr-act.del:hover{color:var(--red,#E5484D);}
 .qrow .qr-act svg{width:15px;height:15px;}
 .qrow .qr-main{display:flex;align-items:center;gap:8px;min-width:0;flex-wrap:wrap;}
+/* ==== Flashcards ==== */
+.fc-filters{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 16px;}
+.fc-fbtn{font-size:12px;font-weight:700;padding:7px 13px;border-radius:100px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-soft);cursor:pointer;}
+.fc-fbtn.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+.fc-deck{border:1px solid var(--line);border-radius:14px;background:var(--surface-2);padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.fc-deck .fd-ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:12px;flex-shrink:0;}
+.fc-deck .fd-main{flex:1;min-width:160px;}
+.fc-deck .fd-name{font-size:15px;font-weight:800;}
+.fc-deck .fd-sub{font-size:12px;color:var(--ink-faint);font-weight:600;margin-top:2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.fc-mini-tag{font-size:10px;font-weight:800;padding:2px 7px;border-radius:100px;}
+.fc-t-aprendendo{background:rgba(240,135,46,.16);color:#F0872E;}
+.fc-t-revisando{background:rgba(124,92,255,.16);color:var(--accent);}
+.fc-t-dominado{background:rgba(23,182,124,.16);color:var(--green);}
+.fc-deck .fd-actions{display:flex;gap:8px;}
+.fc-deck .fd-study{border:none;border-radius:10px;padding:10px 16px;background:var(--accent);color:#fff;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;}
+.fc-deck .fd-study:disabled{opacity:.45;cursor:default;}
+.fc-deck .fd-x{color:var(--ink-faint);cursor:pointer;display:grid;place-items:center;}
+.fc-deck .fd-x:hover{color:var(--red,#E5484D);}
+.fc-empty{text-align:center;color:var(--ink-faint);font-size:13.5px;padding:30px 10px;}
+/* estudo */
+.fc-study-card{max-width:680px;margin:0 auto;}
+.fc-study-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.fc-study-count{font-size:12px;font-weight:800;color:var(--ink-faint);}
+.fc-flash{perspective:1600px;height:320px;cursor:pointer;}
+.fc-flash.flipped .fc-front{transform:rotateY(180deg);}
+.fc-flash.flipped .fc-back{transform:rotateY(360deg);}
+.fc-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:18px;border:1px solid var(--line);background:var(--surface-2);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;transition:transform .5s;}
+.fc-front{transform:rotateY(0);}
+.fc-back{transform:rotateY(180deg);background:var(--surface-3);}
+.fc-flash{position:relative;}
+.fc-q{font-size:20px;font-weight:700;line-height:1.4;}
+.fc-hint{position:absolute;bottom:16px;font-size:11px;color:var(--ink-faint);font-weight:600;}
+.fc-tag{position:absolute;top:16px;left:16px;font-size:10px;font-weight:800;padding:3px 9px;border-radius:100px;}
+.fc-rate{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:18px;}
+.fc-rate-btn{border:1px solid var(--line);border-radius:12px;padding:12px 6px;background:var(--surface-2);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:3px;align-items:center;font-size:13px;}
+.fc-rate-btn span{font-size:10.5px;color:var(--ink-faint);font-weight:600;}
+.fc-rate-btn.again:hover{border-color:#E5484D;color:#E5484D;}
+.fc-rate-btn.hard:hover{border-color:#F0872E;color:#F0872E;}
+.fc-rate-btn.good:hover{border-color:var(--accent);color:var(--accent);}
+.fc-rate-btn.easy:hover{border-color:var(--green);color:var(--green);}
+.fc-study-done{text-align:center;padding:30px 10px;}
 </style>
 </head>
 <body data-theme="light">
@@ -719,6 +761,46 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
     </div>
   </section>
 
+  <section class="panel" data-panel="flashcards">
+    <!-- BIBLIOTECA -->
+    <div id="fcLibrary">
+      <div class="grid g-3" style="margin-bottom:14px;">
+        <div class="stat"><div class="st-top"><span class="st-lab">Para revisar hoje</span><span class="st-ic" id="fcIc1"></span></div><div class="st-v" id="fcDue">0</div><div class="st-sub">cards no ponto</div></div>
+        <div class="stat"><div class="st-top"><span class="st-lab">Aprendendo</span><span class="st-ic" id="fcIc2"></span></div><div class="st-v" id="fcLearning">0</div><div class="st-sub">ainda fixando</div></div>
+        <div class="stat"><div class="st-top"><span class="st-lab">Dominados</span><span class="st-ic" id="fcIc3"></span></div><div class="st-v" id="fcMastered">0</div><div class="st-sub">na memória longa</div></div>
+      </div>
+      <div class="card">
+        <div class="card-h" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <div><span class="eyebrow">Biblioteca</span><h2>Meus baralhos</h2></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-line" id="fcNewCard" style="width:auto;padding:10px 16px;">+ Card manual</button>
+            <button class="btn-primary" id="fcImportPdf" style="width:auto;padding:10px 16px;">Importar PDF → IA</button>
+          </div>
+        </div>
+        <div class="fc-filters" id="fcFilters"></div>
+        <div id="fcDecks"></div>
+      </div>
+    </div>
+    <!-- ESTUDO -->
+    <div id="fcStudy" style="display:none;">
+      <div class="card fc-study-card">
+        <div class="fc-study-top"><button class="trilha-back" id="fcStudyBack">‹ Voltar à biblioteca</button><div class="fc-study-count" id="fcStudyCount">1 / 10</div></div>
+        <div class="fc-flash" id="fcFlash">
+          <div class="fc-face fc-front"><span class="fc-tag" id="fcFaceTag"></span><div class="fc-q" id="fcFront">—</div><div class="fc-hint">toque para virar</div></div>
+          <div class="fc-face fc-back"><div class="fc-q" id="fcBack">—</div></div>
+        </div>
+        <div class="fc-rate" id="fcRate" style="display:none;">
+          <button class="fc-rate-btn again" data-rate="0"><b>Errei</b><span id="fcR0">1min</span></button>
+          <button class="fc-rate-btn hard" data-rate="1"><b>Difícil</b><span id="fcR1">–</span></button>
+          <button class="fc-rate-btn good" data-rate="2"><b>Bom</b><span id="fcR2">–</span></button>
+          <button class="fc-rate-btn easy" data-rate="3"><b>Fácil</b><span id="fcR3">–</span></button>
+        </div>
+        <button class="btn-primary" id="fcShowAnswer" style="max-width:260px;margin:18px auto 0;">Mostrar resposta</button>
+        <div class="fc-study-done" id="fcStudyDone" style="display:none;"><div style="font-size:40px;">🎉</div><h3>Sessão concluída!</h3><p id="fcDoneSub" style="color:var(--ink-soft);">Você revisou todos os cards pendentes.</p><button class="btn-primary" id="fcDoneBack" style="max-width:220px;margin:10px auto 0;">Voltar</button></div>
+      </div>
+    </div>
+  </section>
+
   <section class="panel" data-panel="revisoes">
     <div class="grid g-3" style="margin-bottom:14px;">
       <div class="stat"><div class="st-top"><span class="st-lab">Atrasadas</span><span class="st-ic" id="rvIc1"></span></div><div class="st-v" id="rvLate">0</div><div class="st-sub">revisar quanto antes</div></div>
@@ -805,6 +887,47 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
   </div>
 </div>
 
+<div class="modal-ov" id="fcCardModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-h"><div class="mh-l"><div class="t" id="fccTitle">Novo card</div><div class="s">Frente (pergunta) e verso (resposta)</div></div><button class="modal-x" id="fccClose">✕</button></div>
+    <div class="modal-b"><div class="mform">
+      <div><label>Frente (pergunta)</label><textarea id="fccFront" rows="2" placeholder="Ex: O que é a bomba de sódio-potássio?"></textarea></div>
+      <div><label>Verso (resposta)</label><textarea id="fccBack" rows="3" placeholder="Ex: Proteína de membrana que transporta 3 Na+ para fora e 2 K+ para dentro, gastando ATP."></textarea></div>
+      <div style="display:flex;gap:10px;"><div style="flex:1;"><label>Matéria</label><select id="fccArea" style="width:100%;font-size:14px;border:1px solid var(--line);border-radius:12px;padding:11px 14px;background:var(--surface-2);color:var(--ink);"></select></div><div style="flex:1;"><label>Baralho</label><input type="text" id="fccDeck" placeholder="Ex: Fisiologia"></div></div>
+      <div class="mform-actions"><button class="btn-primary" id="fccSave">Salvar</button><button class="btn-line" id="fccCancel">Cancelar</button></div>
+    </div></div>
+  </div>
+</div>
+
+<div class="modal-ov" id="fcPdfModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-h"><div class="mh-l"><div class="t">Importar PDF → Flashcards</div><div class="s" id="fcpSub">A IA transforma o conteúdo em cards</div></div><button class="modal-x" id="fcpClose">✕</button></div>
+    <div class="modal-b"><div class="mform">
+      <div id="fcpStep1">
+        <label class="btn-line" style="cursor:pointer;display:inline-block;">Escolher PDF<input type="file" id="fcpFile" accept="application/pdf,.pdf" class="hidden"></label>
+        <span id="fcpFileName" style="font-size:12.5px;color:var(--ink-faint);margin-left:10px;"></span>
+        <div style="display:flex;gap:10px;margin-top:12px;"><div style="flex:1;"><label>Matéria</label><select id="fcpArea" style="width:100%;font-size:14px;border:1px solid var(--line);border-radius:12px;padding:11px 14px;background:var(--surface-2);color:var(--ink);"></select></div><div style="flex:1;"><label>Baralho</label><input type="text" id="fcpDeck" placeholder="Ex: Resumo cap. 3"></div></div>
+        <div style="margin-top:6px;"><label>Quantos cards? (aprox.)</label><input type="number" id="fcpCount" min="5" max="60" value="15"></div>
+        <div class="note" id="fcpExtracted" style="margin-top:10px;display:none;"></div>
+      </div>
+      <div class="mform-actions" id="fcpActions">
+        <button class="btn-primary" id="fcpGenAI" style="display:none;">Gerar com IA (minha chave)</button>
+        <button class="btn-primary" id="fcpGenPrompt">Gerar prompt p/ colar no Claude</button>
+        <button class="btn-line" id="fcpCancel">Cancelar</button>
+      </div>
+      <div style="font-size:11.5px;color:var(--ink-faint);margin-top:2px;"><a href="#" id="fcpSetKey" style="color:var(--accent);text-decoration:none;">Configurar minha chave da Anthropic</a> — pra geração automática (opcional; sua chave fica só neste navegador).</div>
+      <div id="fcpStep2" style="display:none;margin-top:6px;">
+        <label>1) Copie este prompt, cole no Claude e traga o JSON de volta:</label>
+        <textarea class="code" id="fcpPrompt" rows="5" readonly></textarea>
+        <div style="margin:8px 0;"><button class="btn-line" id="fcpCopy" style="width:auto;padding:9px 16px;">Copiar prompt</button></div>
+        <label>2) Cole aqui o JSON que o Claude devolver:</label>
+        <textarea class="code" id="fcpJson" rows="4" placeholder='[{"front":"...","back":"..."}]'></textarea>
+        <div class="mform-actions"><button class="btn-primary" id="fcpImportJson">Importar cards</button></div>
+      </div>
+    </div></div>
+  </div>
+</div>
+
 <div class="modal-ov" id="qModal">
   <div class="modal" style="max-width:460px;">
     <div class="modal-h"><div class="mh-l"><div class="t" id="qmTitle">Registrar questões</div><div class="s" id="qmSub">Resultado de um bloco de questões</div></div><button class="modal-x" id="qmClose">✕</button></div>
@@ -847,6 +970,7 @@ textarea.code{width:100%;min-height:150px;font-family:ui-monospace,Menlo,monospa
    - localStorage: somente cache/offline e preferência visual
    ============================================================================ */
 const SUPABASE_URL = 'https://qcszgshitvsohjgzyhqn.supabase.co';
+try{if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}catch(e){}
 const SUPABASE_ANON_KEY = 'sb_publishable_2tnpJZ4sKNR_qfpNDEA7BA_Y468229R';
 
 if (!window.supabase) {
@@ -1178,6 +1302,9 @@ const ICONS={
   edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/>',
   book:'<path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M19 3v18"/>',
   refresh:'<path d="M3 12a9 9 0 019-9 9 9 0 016.7 3H21m0-3v3.5h-3.5"/><path d="M21 12a9 9 0 01-9 9 9 9 0 01-6.7-3H3m0 3v-3.5h3.5"/>',
+  layers:'<path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>',
+  upload:'<path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M20 16v3a2 2 0 01-2 2H6a2 2 0 01-2-2v-3"/>',
+  sparkles:'<path d="M12 3l1.8 4.5L18 9l-4.2 1.5L12 15l-1.8-4.5L6 9l4.2-1.5L12 3z"/><path d="M19 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z"/>',
   grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   external:'<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/>'
 };
@@ -1224,7 +1351,7 @@ function fmtBR(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return `${d}/${
 function examDate(){return PLAN&&PLAN.examDate?new Date(PLAN.examDate+'T08:00:00'):null;}
 
 /* ============================ TABS ============================ */
-const BASE_TABS=[['dashboard','Início','home'],['metas','Metas','target'],['progresso','Progresso','chart'],['semanal','Semana','calendar'],['sprints','Sprints','zap'],['estudo','Estudo','clock'],['revisoes','Revisões','refresh'],['apps','Apps','grid']];
+const BASE_TABS=[['dashboard','Início','home'],['metas','Metas','target'],['progresso','Progresso','chart'],['semanal','Semana','calendar'],['sprints','Sprints','zap'],['estudo','Estudo','clock'],['flashcards','Flashcards','layers'],['revisoes','Revisões','refresh'],['apps','Apps','grid']];
 function tabsFor(){return BASE_TABS.slice();}
 function renderTabs(){
   const tabs=tabsFor();
@@ -1621,6 +1748,7 @@ function loadExtras(){
   EXTRAS.study=EXTRAS.study||{};        // { "2026-08-06": {min, sess} }
   EXTRAS.questions=EXTRAS.questions||[]; // [{date,total,correct,area,assunto}]
   EXTRAS.revisoes=EXTRAS.revisoes||[]; // [{id,area,assunto,acc,stage,due,base}]
+  EXTRAS.flashcards=EXTRAS.flashcards||[]; // [{id,front,back,area,deck,ease,interval,reps,lapses,due,createdAt}]
   EXTRAS.avatar=EXTRAS.avatar||null;     // dataURL
   EXTRAS.redacao=EXTRAS.redacao||[];     // [{date,score}]
   EXTRAS.simulado=EXTRAS.simulado||[];   // [{date,score}]
@@ -1938,6 +2066,220 @@ function renderRevisoes(){
   list.querySelectorAll('[data-rvx]').forEach(b=>b.addEventListener('click',()=>{EXTRAS.revisoes=EXTRAS.revisoes.filter(x=>x.id!==b.dataset.rvx);saveExtras();renderRevisoes();}));
 }
 
+/* ============ FLASHCARDS (biblioteca + repetição espaçada + PDF→IA) ============ */
+let fcFilter='todos', fcSession=null, fcpText='';
+function fcUid(){return 'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+function fcTag(c){ if((c.reps||0)<2 || (c.interval||0)<7) return 'aprendendo'; if((c.interval||0)>=21) return 'dominado'; return 'revisando'; }
+function fcDueToday(c){return (c.due||todayISO())<=todayISO();}
+function fcPreview(c,rating){ // retorna intervalo (dias) resultante, sem aplicar
+  let {ease=2.5,interval=0,reps=0}=c;
+  if(rating===0) return 0;
+  if(rating===1) return Math.max(1,Math.round((interval||1)*1.2));
+  if(rating===2) return reps===0?1:reps===1?3:Math.max(1,Math.round((interval||1)*ease));
+  return Math.max(2,Math.round((interval||1)*ease*1.3));
+}
+function fcApply(c,rating){
+  let ease=c.ease||2.5, interval=c.interval||0, reps=c.reps||0, lapses=c.lapses||0;
+  if(rating===0){ ease=Math.max(1.3,ease-0.2); interval=0; reps=0; lapses++; }
+  else if(rating===1){ ease=Math.max(1.3,ease-0.15); interval=Math.max(1,Math.round((interval||1)*1.2)); reps++; }
+  else if(rating===2){ interval=reps===0?1:reps===1?3:Math.max(1,Math.round((interval||1)*ease)); reps++; }
+  else { ease=Math.min(3.0,ease+0.15); interval=Math.max(2,Math.round((interval||1)*ease*1.3)); reps++; }
+  c.ease=ease; c.interval=interval; c.reps=reps; c.lapses=lapses; c.due=addDaysISO(todayISO(),interval);
+}
+function fcHuman(days){ if(days<=0)return '<10min'; if(days===1)return '1 dia'; if(days<30)return days+' dias'; const m=Math.round(days/30); return m+(m>1?' meses':' mês'); }
+
+function renderFlashcards(){
+  const lib=document.getElementById('fcLibrary'); if(!lib)return;
+  EXTRAS.flashcards=EXTRAS.flashcards||[];
+  const setIc=(id,n)=>{const e=document.getElementById(id);if(e)e.innerHTML=svg(n);};
+  setIc('fcIc1','target');setIc('fcIc2','flame');setIc('fcIc3','check');
+  const cards=EXTRAS.flashcards||[];
+  const due=cards.filter(fcDueToday).length;
+  const learning=cards.filter(c=>fcTag(c)==='aprendendo').length;
+  const mastered=cards.filter(c=>fcTag(c)==='dominado').length;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('fcDue',due);set('fcLearning',learning);set('fcMastered',mastered);
+  // filtros
+  const filters=[['todos','Todos'],['due','Para revisar'],['aprendendo','Aprendendo'],['revisando','Revisando'],['dominado','Dominado']];
+  const fb=document.getElementById('fcFilters');
+  if(fb)fb.innerHTML=filters.map(([k,l])=>`<button class="fc-fbtn${fcFilter===k?' on':''}" data-fcf="${k}">${l}</button>`).join('');
+  fb&&fb.querySelectorAll('[data-fcf]').forEach(b=>b.addEventListener('click',()=>{fcFilter=b.dataset.fcf;renderFlashcards();}));
+  // baralhos agrupados por matéria/baralho
+  const groups={};
+  cards.forEach(c=>{const key=(c.area||'outro')+'||'+(c.deck||'Geral');(groups[key]=groups[key]||[]).push(c);});
+  const wrap=document.getElementById('fcDecks');
+  const keys=Object.keys(groups).filter(k=>{
+    if(fcFilter==='todos')return true;
+    const g=groups[k];
+    if(fcFilter==='due')return g.some(fcDueToday);
+    return g.some(c=>fcTag(c)===fcFilter);
+  });
+  if(!cards.length){wrap.innerHTML='<div class="fc-empty">Nenhum flashcard ainda. Crie um card manual ou importe um PDF pra IA gerar pra você.</div>';return;}
+  if(!keys.length){wrap.innerHTML='<div class="fc-empty">Nenhum baralho neste filtro.</div>';return;}
+  wrap.innerHTML=keys.map(k=>{
+    const [area,deck]=k.split('||'); const g=groups[k]; const col=AREA_COLOR[area]||'var(--accent)';
+    const d=g.filter(fcDueToday).length;
+    const tg={aprendendo:0,revisando:0,dominado:0}; g.forEach(c=>tg[fcTag(c)]++);
+    return `<div class="fc-deck"><span class="fd-ic" style="background:${col}">${(AREA_LABELS[area]||'?').slice(0,3)}</span>
+      <div class="fd-main"><div class="fd-name">${deck}</div><div class="fd-sub"><span>${g.length} cards</span>
+        ${tg.aprendendo?`<span class="fc-mini-tag fc-t-aprendendo">${tg.aprendendo} aprendendo</span>`:''}
+        ${tg.revisando?`<span class="fc-mini-tag fc-t-revisando">${tg.revisando} revisando</span>`:''}
+        ${tg.dominado?`<span class="fc-mini-tag fc-t-dominado">${tg.dominado} dominado</span>`:''}</div></div>
+      <div class="fd-actions"><button class="fd-study" data-fcstudy="${k}"${d?'':' disabled'}>${d?`Estudar (${d})`:'Em dia'}</button><span class="fd-x" data-fcdel="${k}" title="Excluir baralho">${svg('x')}</span></div></div>`;
+  }).join('');
+  wrap.querySelectorAll('[data-fcstudy]').forEach(b=>b.addEventListener('click',()=>startStudy(b.dataset.fcstudy)));
+  wrap.querySelectorAll('[data-fcdel]').forEach(b=>b.addEventListener('click',()=>{
+    const [area,deck]=b.dataset.fcdel.split('||');
+    if(!confirm(`Excluir o baralho "${deck}" e todos os cards dele?`))return;
+    EXTRAS.flashcards=EXTRAS.flashcards.filter(c=>!((c.area||'outro')===area&&(c.deck||'Geral')===deck));
+    saveExtras();renderFlashcards();toast('Baralho excluído');
+  }));
+}
+/* ---- ESTUDO ---- */
+function startStudy(key){
+  const [area,deck]=key.split('||');
+  const due=(EXTRAS.flashcards||[]).filter(c=>(c.area||'outro')===area&&(c.deck||'Geral')===deck&&fcDueToday(c));
+  if(!due.length){toast('Nenhum card pendente neste baralho.');return;}
+  fcSession={ids:due.map(c=>c.id),idx:0};
+  document.getElementById('fcLibrary').style.display='none';
+  document.getElementById('fcStudy').style.display='block';
+  document.getElementById('fcStudyDone').style.display='none';
+  showStudyCard();
+}
+function studyCard(){return (EXTRAS.flashcards||[]).find(c=>c.id===fcSession.ids[fcSession.idx]);}
+function showStudyCard(){
+  const c=studyCard(); if(!c){endStudy();return;}
+  document.getElementById('fcStudyCount').textContent=(fcSession.idx+1)+' / '+fcSession.ids.length;
+  const tag=fcTag(c);
+  const tel=document.getElementById('fcFaceTag'); tel.className='fc-tag fc-t-'+tag; tel.textContent=tag;
+  document.getElementById('fcFront').textContent=c.front;
+  document.getElementById('fcBack').textContent=c.back;
+  document.getElementById('fcFlash').classList.remove('flipped');
+  document.getElementById('fcRate').style.display='none';
+  document.getElementById('fcShowAnswer').style.display='block';
+  ['fcR0','fcR1','fcR2','fcR3'].forEach((id,r)=>{const e=document.getElementById(id);if(e)e.textContent=fcHuman(fcPreview(c,r));});
+}
+function revealAnswer(){
+  document.getElementById('fcFlash').classList.add('flipped');
+  document.getElementById('fcShowAnswer').style.display='none';
+  document.getElementById('fcRate').style.display='grid';
+}
+function rateCard(r){
+  const c=studyCard(); if(!c)return;
+  fcApply(c,r); saveExtras();
+  if(r===0) fcSession.ids.push(c.id); // errou: volta no fim da sessão
+  fcSession.idx++;
+  if(fcSession.idx>=fcSession.ids.length) endStudy(); else showStudyCard();
+}
+function endStudy(){
+  document.getElementById('fcRate').style.display='none';
+  document.getElementById('fcShowAnswer').style.display='none';
+  document.getElementById('fcFlash').classList.remove('flipped');
+  document.getElementById('fcStudyDone').style.display='block';
+  document.getElementById('fcFront').textContent='';document.getElementById('fcBack').textContent='';
+  document.getElementById('fcFaceTag').textContent='';
+  fcSession=null; renderFlashcards();
+}
+function backToLibrary(){document.getElementById('fcStudy').style.display='none';document.getElementById('fcLibrary').style.display='block';fcSession=null;renderFlashcards();}
+document.getElementById('fcShowAnswer')?.addEventListener('click',revealAnswer);
+document.getElementById('fcFlash')?.addEventListener('click',()=>{if(document.getElementById('fcRate').style.display==='none'&&document.getElementById('fcShowAnswer').style.display!=='none')revealAnswer();});
+document.querySelectorAll('#fcRate [data-rate]').forEach(b=>b.addEventListener('click',()=>rateCard(parseInt(b.dataset.rate))));
+document.getElementById('fcStudyBack')?.addEventListener('click',backToLibrary);
+document.getElementById('fcDoneBack')?.addEventListener('click',backToLibrary);
+/* ---- CRIAR CARD MANUAL ---- */
+function fcAreaOptions(sel){return Object.keys(AREA_LABELS).map(a=>`<option value="${a}"${a===sel?' selected':''}>${AREA_LABELS[a]}</option>`).join('');}
+function openCardModal(){
+  document.getElementById('fccArea').innerHTML=fcAreaOptions('biologia');
+  document.getElementById('fccFront').value='';document.getElementById('fccBack').value='';document.getElementById('fccDeck').value='';
+  document.getElementById('fcCardModal').classList.add('show');
+}
+document.getElementById('fcNewCard')?.addEventListener('click',openCardModal);
+document.getElementById('fccClose')?.addEventListener('click',()=>document.getElementById('fcCardModal').classList.remove('show'));
+document.getElementById('fccCancel')?.addEventListener('click',()=>document.getElementById('fcCardModal').classList.remove('show'));
+document.getElementById('fcCardModal')?.addEventListener('click',e=>{if(e.target.id==='fcCardModal')e.currentTarget.classList.remove('show');});
+document.getElementById('fccSave')?.addEventListener('click',()=>{
+  const front=document.getElementById('fccFront').value.trim(), back=document.getElementById('fccBack').value.trim();
+  if(!front||!back){toast('Preencha frente e verso.');return;}
+  EXTRAS.flashcards=EXTRAS.flashcards||[];
+  const area=document.getElementById('fccArea').value, deck=(document.getElementById('fccDeck').value.trim()||'Geral');
+  EXTRAS.flashcards.push({id:fcUid(),front,back,area,deck,ease:2.5,interval:0,reps:0,lapses:0,due:todayISO(),createdAt:todayISO()});
+  saveExtras();document.getElementById('fcCardModal').classList.remove('show');renderFlashcards();toast('Card criado');
+});
+/* ---- IMPORTAR PDF → IA ---- */
+function openPdfModal(){
+  fcpText='';
+  document.getElementById('fcpArea').innerHTML=fcAreaOptions('biologia');
+  document.getElementById('fcpDeck').value='';document.getElementById('fcpFileName').textContent='';
+  document.getElementById('fcpExtracted').style.display='none';
+  document.getElementById('fcpStep2').style.display='none';
+  document.getElementById('fcpJson').value='';
+  document.getElementById('fcpGenAI').style.display = localStorage.getItem('rm_claude_key')?'inline-flex':'none';
+  document.getElementById('fcPdfModal').classList.add('show');
+}
+document.getElementById('fcImportPdf')?.addEventListener('click',openPdfModal);
+document.getElementById('fcpSetKey')?.addEventListener('click',e=>{
+  e.preventDefault();
+  const cur=localStorage.getItem('rm_claude_key')||'';
+  const k=prompt('Cole sua chave da API Anthropic (começa com sk-ant-). Deixe vazio para remover.',cur);
+  if(k===null)return;
+  if(k.trim()){localStorage.setItem('rm_claude_key',k.trim());toast('Chave salva neste navegador.');}
+  else{localStorage.removeItem('rm_claude_key');toast('Chave removida.');}
+  document.getElementById('fcpGenAI').style.display=localStorage.getItem('rm_claude_key')?'inline-flex':'none';
+});
+document.getElementById('fcpClose')?.addEventListener('click',()=>document.getElementById('fcPdfModal').classList.remove('show'));
+document.getElementById('fcpCancel')?.addEventListener('click',()=>document.getElementById('fcPdfModal').classList.remove('show'));
+document.getElementById('fcPdfModal')?.addEventListener('click',e=>{if(e.target.id==='fcPdfModal')e.currentTarget.classList.remove('show');});
+document.getElementById('fcpFile')?.addEventListener('change',async e=>{
+  const f=e.target.files[0]; if(!f)return;
+  document.getElementById('fcpFileName').textContent=f.name+' — lendo...';
+  try{
+    const buf=await f.arrayBuffer();
+    const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+    let txt=''; const maxP=Math.min(pdf.numPages,20);
+    for(let i=1;i<=maxP;i++){const page=await pdf.getPage(i);const content=await page.getTextContent();txt+=content.items.map(it=>it.str).join(' ')+'\n';if(txt.length>9000)break;}
+    fcpText=txt.replace(/\s+/g,' ').trim().slice(0,9000);
+    document.getElementById('fcpFileName').textContent=f.name+' ✓';
+    const ex=document.getElementById('fcpExtracted'); ex.style.display='block'; ex.textContent='Texto extraído: ~'+fcpText.length+' caracteres. Agora gere os cards.';
+  }catch(err){document.getElementById('fcpFileName').textContent='Erro ao ler PDF.';console.error(err);toast('Não consegui ler esse PDF.');}
+});
+function fcBuildPrompt(){
+  const n=parseInt(document.getElementById('fcpCount').value)||15;
+  const area=AREA_LABELS[document.getElementById('fcpArea').value]||'';
+  return `Você é um professor criando flashcards de estudo para o ENEM/vestibular de Medicina.\nA partir do TEXTO abaixo (matéria: ${area}), gere cerca de ${n} flashcards claros e objetivos.\nRegras: cada card tem "front" (pergunta direta ou conceito) e "back" (resposta curta e correta). Evite cards ambíguos. Cubra os pontos mais importantes.\nRESPONDA APENAS com um array JSON válido, sem texto antes ou depois, no formato:\n[{"front":"...","back":"..."}]\n\nTEXTO:\n"""${fcpText}"""`;
+}
+document.getElementById('fcpGenPrompt')?.addEventListener('click',()=>{
+  if(!fcpText){toast('Escolha um PDF primeiro.');return;}
+  document.getElementById('fcpPrompt').value=fcBuildPrompt();
+  document.getElementById('fcpStep2').style.display='block';
+});
+document.getElementById('fcpCopy')?.addEventListener('click',()=>{const t=document.getElementById('fcpPrompt');t.select();try{navigator.clipboard.writeText(t.value);toast('Prompt copiado');}catch(e){document.execCommand('copy');toast('Prompt copiado');}});
+function fcImportCards(arr){
+  EXTRAS.flashcards=EXTRAS.flashcards||[];
+  const area=document.getElementById('fcpArea').value, deck=(document.getElementById('fcpDeck').value.trim()||'Importado');
+  let n=0;
+  arr.forEach(x=>{if(x&&x.front&&x.back){EXTRAS.flashcards.push({id:fcUid(),front:(''+x.front).trim(),back:(''+x.back).trim(),area,deck,ease:2.5,interval:0,reps:0,lapses:0,due:todayISO(),createdAt:todayISO()});n++;}});
+  saveExtras();renderFlashcards();
+  document.getElementById('fcPdfModal').classList.remove('show');
+  toast(n+' flashcards criados no baralho "'+deck+'"');
+}
+document.getElementById('fcpImportJson')?.addEventListener('click',()=>{
+  let raw=document.getElementById('fcpJson').value.trim();
+  raw=raw.replace(/^```json/i,'').replace(/^```/,'').replace(/```$/,'').trim();
+  try{const arr=JSON.parse(raw);if(!Array.isArray(arr))throw 0;fcImportCards(arr);}catch(e){toast('JSON inválido. Cole o array [{front,back}].');}
+});
+document.getElementById('fcpGenAI')?.addEventListener('click',async()=>{
+  const key=localStorage.getItem('rm_claude_key'); if(!key){toast('Configure sua chave.');return;}
+  if(!fcpText){toast('Escolha um PDF primeiro.');return;}
+  const btn=document.getElementById('fcpGenAI'); btn.textContent='Gerando...'; btn.disabled=true;
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages:[{role:'user',content:fcBuildPrompt()}]})});
+    const data=await resp.json();
+    const text=(data.content||[]).filter(x=>x.type==='text').map(x=>x.text).join('').replace(/```json|```/g,'').trim();
+    fcImportCards(JSON.parse(text));
+  }catch(e){console.error(e);toast('Falha na geração com IA. Use o prompt manual.');}
+  btn.textContent='Gerar com IA (minha chave)'; btn.disabled=false;
+});
+
 /* ---- FOTO DE PERFIL ---- */
 function applyAvatar(){
   const av=EXTRAS&&EXTRAS.avatar;
@@ -2238,6 +2580,7 @@ function renderAll(){
   renderJourney();
   renderEstudo();
   renderRevisoes();
+  renderFlashcards();
   renderApps();
   renderEvo();
   renderPerfil();
@@ -2336,7 +2679,7 @@ Responda o máximo que puder. Com isto, geramos seu plano em JSON para importar 
    linguagens, simulado, rotina, outro.`;
 
 /* ============================ BOOT ============================ */
-console.log('%cRota Med · layout v3.2 (proteção anti-perda + restore que mescla sem apagar foto/apps)','color:#7C5CFF;font-weight:700;font-size:13px');
+console.log('%cRota Med · layout v3.3 (Flashcards: PDF→IA, biblioteca, estudo espaçado, tags)','color:#7C5CFF;font-weight:700;font-size:13px');
 (async function boot(){
   try{
     const cur=await authApi.current();
